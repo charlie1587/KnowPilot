@@ -1,0 +1,4 @@
+database:
+  engine: sqlite
+  sqlite_path: ./data/quizgen.db
+  echo: true
