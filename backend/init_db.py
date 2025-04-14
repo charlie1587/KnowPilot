@@ -16,7 +16,14 @@ def init_db():
 
         with SessionLocal() as db:
             print("Inserting sample question...")
-            q = Question(content="What is AI?", answer="AI is Artificial Intelligence.")
+            q = Question(
+                section="Section 1: Intro",
+                seq="1a",
+                page_name="Welcome",
+                audio_file="intro01.mp3",
+                content="What is AI?",
+                answer="AI is Artificial Intelligence."
+            )
             db.add(q)
             db.commit()
             print("Sample data inserted.")
