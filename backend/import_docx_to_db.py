@@ -3,6 +3,7 @@ import_docx_to_db.py - Extracts structured data from a Word .docx file
 and stores it into the SQLite database using SQLAlchemy.
 """
 from docx import Document
+from sqlalchemy.exc import SQLAlchemyError
 from backend.database import SessionLocal
 from backend.models import Question
 
@@ -49,12 +50,22 @@ def load_questions_from_docx(docx_path):
                         answer="To be added"
                     )
                     session.add(q)
-                except Exception as e:
-                    print(f"Error parsing row {i} in table {table_index}: {e}")
+                except IndexError as e:
+                    print(f"Error accessing table cells in row {i}, table {table_index}: {e}")
+                except AttributeError as e:
+                    print(f"Error reading cell content in row {i}, table {table_index}: {e}")
+                except SQLAlchemyError as e:
+                    print(f"Database error while adding row {i} from table {table_index}: {e}")
+                    session.rollback()
 
-    session.commit()
-    session.close()
-    print("Import complete.")
+    try:
+        session.commit()
+    except SQLAlchemyError as e:
+        print(f"Error committing changes to database: {e}")
+        session.rollback()
+    finally:
+        session.close()
+        print("Import complete.")
 
 if __name__ == "__main__":
     load_questions_from_docx("data/Thunderstorm Avoidance_Boeing 20250210.docx")
