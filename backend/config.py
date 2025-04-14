@@ -1,3 +1,7 @@
+"""
+config.py - Loads YAML configuration from config/config.yaml.
+Provides global constants such as database path and engine URI.
+"""
 import os
 import yaml
 

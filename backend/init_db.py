@@ -1,7 +1,11 @@
+"""
+init_db.py - Initializes the SQLite database and inserts sample data if empty.
+Should be run once before starting the application.
+"""
+import os
 from backend.models import Base, Question
 from backend.database import engine, SessionLocal
-from backend.config import SQLITE_DB_PATH  
-import os
+from backend.config import SQLITE_DB_PATH
 
 def init_db():
     if os.path.exists(SQLITE_DB_PATH):

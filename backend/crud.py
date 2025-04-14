@@ -1,5 +1,9 @@
+"""
+crud.py - Contains database CRUD operations for Question objects.
+Functions include create, read, and list questions.
+"""
 from sqlalchemy.orm import Session
-from .models import Question
+from backend.models import Question
 
 def get_all_questions(db: Session):
     return db.query(Question).all()

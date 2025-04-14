@@ -2,8 +2,8 @@ from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from .database import SessionLocal
-from .crud import get_all_questions, create_question
+from backend.database import SessionLocal
+from backend.crud import get_all_questions, create_question
 
 app = FastAPI()
 
