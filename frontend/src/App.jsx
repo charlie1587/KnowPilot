@@ -1,17 +1,18 @@
 import React from 'react'
 import Header from './components/Header'
 import DataDisplay from './components/DataDisplay'
-import './index.css'
+// 在App.jsx或index.js中
+import './styles/index.css';
 
 function App() {
   return (
-    <div>
-      <Header />
-      <main className="container">
+    <div className="app-container">
+      <div className="app-main">
+        <Header />
         <DataDisplay />
-      </main>
+      </div>
     </div>
-  )
+  );
 }
 
 export default App
