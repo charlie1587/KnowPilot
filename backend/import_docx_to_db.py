@@ -4,16 +4,35 @@ and stores it into the SQLite database using SQLAlchemy.
 """
 from docx import Document
 from sqlalchemy.exc import SQLAlchemyError
-from backend.database import SessionLocal
-from backend.models import Question
+import os
+from backend.database import engine, SessionLocal
+from backend.models import Base, Question
+from backend.config import SQLITE_DB_PATH
+
+def init_db_if_needed():
+    """创建数据库表如果它们不存在"""
+    print(f"Checking database at {SQLITE_DB_PATH}")
+    if not os.path.exists(SQLITE_DB_PATH) or not os.path.getsize(SQLITE_DB_PATH):
+        print("Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        print("Database tables created.")
+    else:
+        print("Database already exists, ensuring tables...")
+        # 确保所有表存在
+        Base.metadata.create_all(bind=engine)
 
 def load_questions_from_docx(docx_path):
+    """从Word文档加载问题到数据库"""
+    # 首先确保数据库和表存在
+    init_db_if_needed()
+    
     doc = Document(docx_path)
     session = SessionLocal()
 
     section = "Unknown Section"
     table_index = 0
     total_tables = len(doc.tables)
+    imported_count = 0
 
     print("Importing from:", docx_path)
 
@@ -47,9 +66,22 @@ def load_questions_from_docx(docx_path):
                         page_name=page_name,
                         audio_file=audio_file,
                         content=content,
+                        knowledge_point="To be added",  # 新增字段
+                        question="To be added",         # 新增字段
                         answer="To be added"
                     )
                     session.add(q)
+                    imported_count += 1
+                    
+                    # 每100条数据提交一次，减轻内存压力
+                    if imported_count % 100 == 0:
+                        try:
+                            session.commit()
+                            print(f"Committed {imported_count} records so far...")
+                        except SQLAlchemyError as e:
+                            print(f"Error in batch commit: {e}")
+                            session.rollback()
+                            
                 except IndexError as e:
                     print(f"Error accessing table cells in row {i}, table {table_index}: {e}")
                 except AttributeError as e:
@@ -60,6 +92,7 @@ def load_questions_from_docx(docx_path):
 
     try:
         session.commit()
+        print(f"Successfully imported {imported_count} records in total.")
     except SQLAlchemyError as e:
         print(f"Error committing changes to database: {e}")
         session.rollback()

@@ -27,6 +27,11 @@ KnowPilot/
 ├── README.md              # Project documentation
 ```
 
+## Setup database
+```bash
+python -m backend.import_docx_to_db
+```
+
 ## Start the API server
 ```bash
 uvicorn backend.main:app --reload

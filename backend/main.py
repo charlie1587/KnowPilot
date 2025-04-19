@@ -60,6 +60,7 @@ def get_grouped_facts(num: int = Query(..., gt=0), db: Session = Depends(get_db)
         })
 
     return grouped_facts
+
 @app.get("/generate-questions")
 def generate_questions(k: int = Query(..., gt=0), db: Session = Depends(get_db)):
     """
@@ -120,12 +121,18 @@ Generate one question:"""
 
     return generated_questions
 
-def call_llm(prompt: str) -> str:
+def call_llm(prompt: str,
+            model: str = "llama3.2",
+            temperature: float = 0.1,
+            max_tokens: int = 100) -> str:
     """
-    Call Ollama API to generate text using llama3.2 model.
+    Call Ollama API to generate text.
     
     Args:
         prompt: The prompt to send to the LLM
+        model: The model to use (default: llama3.2)
+        temperature: Controls randomness (default: 0.1 for more deterministic responses)
+        max_tokens: Maximum number of tokens in the response
         
     Returns:
         Generated text from LLM
@@ -133,14 +140,15 @@ def call_llm(prompt: str) -> str:
     url = "http://localhost:11434/api/generate"
 
     payload = {
-        "model": "llama3.2",
-        "prompt": prompt
+        "model": model,
+        "prompt": prompt,
+        "temperature": temperature,
+        "max_tokens": max_tokens
     }
 
     try:
-
         # Use requests with stream=True to handle streaming response
-        response = requests.post(url, json=payload, stream=True)
+        response = requests.post(url, json=payload, stream=True, timeout=60)
 
         if response.status_code != 200:
             raise HTTPException(status_code=500, detail="Failed to call LLM API")

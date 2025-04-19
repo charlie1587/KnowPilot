@@ -10,15 +10,20 @@ from pydantic import BaseModel
 Base = declarative_base()
 
 class Question(Base):
+    """
+    Question - SQLAlchemy model for the questions table.
+    """
     __tablename__ = "questions"
 
     id = Column(Integer, primary_key=True, index=True)
-    section = Column(String(200))       
-    seq = Column(String(50))            
-    page_name = Column(String(200))     
-    audio_file = Column(String(200))    
+    section = Column(String(200))
+    seq = Column(String(50))
+    page_name = Column(String(200))
+    audio_file = Column(String(200))
     content = Column(String(1000), nullable=False)  # Expanded length
-    answer = Column(String(1000), nullable=False, default="To be added")
+    knowledge_point = Column(String(500), default="To be added")
+    question = Column(String(1000), default="To be added")
+    answer = Column(String(1000), default="To be added")
     created_at = Column(DateTime, default=datetime.now)
 
 class QuestionResponse(BaseModel):
@@ -32,4 +37,7 @@ class QuestionResponse(BaseModel):
     answer: str
 
     class Config:
+        """
+        Config - Pydantic model configuration.
+        """
         orm_mode = True  # Enable ORM mode for SQLAlchemy models
