@@ -6,6 +6,10 @@ from backend.database import get_db
 from backend.models import Question
 from backend.crud import get_all_questions
 
+# TODO: remove chinese comments
+# TODO: move promt to config
+# TODO: add a parameter to control whether to skip 
+
 router = APIRouter(
     tags=["knowledge generation"],
 )
