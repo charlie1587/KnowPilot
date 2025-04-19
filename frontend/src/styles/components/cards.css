@@ -1,4 +1,4 @@
-/* 分组数据卡片 */
+/* Grouped Data Cards */
 .grouped-data {
   display: grid;
   gap: var(--spacing-lg);
@@ -19,6 +19,7 @@
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
 }
 
+/* Group Header */
 .group-header {
   display: flex;
   justify-content: space-between;
@@ -43,7 +44,7 @@
   border-radius: 999px;
 }
 
-/* 状态指示标签 */
+/* Status Indicators */
 .status-indicator {
   display: flex;
   align-items: center;
@@ -69,7 +70,7 @@
   color: var(--rose-500);
 }
 
-/* 标签样式 */
+/* Filter & Search Tags */
 .search-tag, .filter-tag {
   display: inline-block;
   padding: 0.25rem 0.75rem;
@@ -88,7 +89,7 @@
   color: #166534;
 }
 
-/* 内容标签 */
+/* Content Tags */
 .content-tag {
   display: inline-block;
   padding: 0.15rem 0.5rem;
@@ -110,7 +111,7 @@
   color: #047857;
 }
 
-/* 搜索高亮 */
+/* Search Highlighting */
 .highlight {
   background-color: rgba(245, 158, 11, 0.2);
   padding: 0 2px;

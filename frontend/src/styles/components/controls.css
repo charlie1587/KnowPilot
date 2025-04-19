@@ -1,6 +1,6 @@
-/* 控制面板容器 */
+/* Control Panel Container */
 .controls-container {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: 1rem;
   border-radius: var(--radius-lg);
 }
 
@@ -8,21 +8,22 @@
   background-color: white;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  padding: var(--spacing-lg);
+  padding: 0.75rem;
   border: none;
 }
 
+/* Control Row Layout */
 .control-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-md) 0;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
 }
 
 .control-row:not(:last-child) {
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-lg);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.75rem;
   position: relative;
 }
 
@@ -42,7 +43,13 @@
   );
 }
 
-/* 搜索区域 */
+/* Consistent Height and Box Sizing for All Inputs */
+.search-input, .select-input, .number-input, .search-button, .view-button {
+  height: 38px;
+  box-sizing: border-box;
+}
+
+/* Search Area */
 .search-container {
   flex: 1;
 }
@@ -51,6 +58,7 @@
   display: flex;
   gap: var(--spacing-sm);
   width: 100%;
+  align-items: center;
 }
 
 .search-input-group {
@@ -71,7 +79,7 @@
 
 .search-input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 0.95rem;
@@ -94,13 +102,16 @@
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 0 var(--spacing-lg);
   font-weight: 600;
-  height: 42px;
   cursor: pointer;
   transition: all var(--transition-normal);
   letter-spacing: 0.01em;
   box-shadow: 0 2px 4px rgba(74, 111, 220, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  line-height: 1;
 }
 
 .search-button:hover {
@@ -114,7 +125,7 @@
   box-shadow: 0 1px 2px rgba(74, 111, 220, 0.2);
 }
 
-/* 视图切换按钮 */
+/* View Toggle Buttons */
 .view-toggle {
   display: flex;
   gap: var(--spacing-xs);
@@ -124,8 +135,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 38px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
   background-color: white;
@@ -146,41 +156,46 @@
   box-shadow: 0 2px 5px rgba(74, 111, 220, 0.2);
 }
 
-/* 过滤区域 */
+/* Filter Area */
 .filter-container {
   display: flex;
-  gap: var(--spacing-xl);
+  gap: 1rem;
   align-items: center;
 }
 
 .filter-group {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: 0.5rem;
 }
 
 .filter-icon {
   color: var(--text-secondary);
 }
 
+/* Label Styles */
 label {
   font-size: 0.9rem;
   font-weight: 500;
   color: #475569;
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
 }
 
+/* Select Input */
 .select-wrapper {
   position: relative;
 }
 
 .select-input {
   appearance: none;
-  padding: 0.75rem var(--spacing-lg) 0.75rem var(--spacing-md);
+  padding: 0.5rem 1.75rem 0.5rem 0.75rem;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   background-color: white;
   font-size: 0.9rem;
-  min-width: 200px;
+  min-width: 180px;
   cursor: pointer;
   transition: all var(--transition-normal);
   color: var(--text-color);
@@ -208,14 +223,16 @@ label {
   transition: transform var(--transition-fast);
 }
 
+/* Number Input */
 .number-input {
   width: 70px;
-  padding: 0.75rem var(--spacing-md);
+  padding: 0.5rem;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   text-align: center;
   font-weight: 500;
   transition: all var(--transition-normal);
+  font-size: 0.9rem;
 }
 
 .number-input:focus {
@@ -224,127 +241,8 @@ label {
   box-shadow: 0 0 0 3px rgba(74, 111, 220, 0.2);
 }
 
+/* Data Count */
 .data-count {
   font-size: 0.875rem;
   color: var(--text-secondary);
-}
-
-/* 减少控制面板的外边距 */
-.controls-container {
-  margin-bottom: 1rem; /* 从原来的var(--spacing-xl)减小 */
-}
-
-/* 减少卡片内边距 */
-.controls-card {
-  padding: 0.75rem; /* 从原来的var(--spacing-lg)减小 */
-}
-
-/* 减少行内边距 */
-.control-row {
-  padding: 0.5rem 0; /* 从var(--spacing-md)减小 */
-  gap: 0.75rem; /* 减少间距 */
-}
-
-/* 减少非最后行的下边距和内边距 */
-.control-row:not(:last-child) {
-  margin-bottom: 0.5rem; /* 从var(--spacing-md)减小 */
-  padding-bottom: 0.75rem; /* 从var(--spacing-lg)减小 */
-}
-
-/* 减少搜索输入框的内边距 */
-.search-input {
-  padding: 0.5rem 1rem 0.5rem 2.5rem; /* 减小上下内边距 */
-  height: 38px; /* 设置固定高度 */
-}
-
-/* 减少搜索按钮高度 */
-.search-button {
-  height: 34px; /* 与输入框匹配 */
-}
-
-/* 减少视图按钮尺寸 */
-.view-button {
-  width: 38px;
-  height: 38px;
-}
-
-/* 减少过滤区域间距 */
-.filter-container {
-  gap: 1rem; /* 从var(--spacing-xl)减小 */
-}
-
-/* 减少过滤组件间距 */
-.filter-group {
-  gap: 0.5rem; /* 从var(--spacing-md)减小 */
-}
-
-/* 减少下拉选择内边距 */
-.select-input {
-  padding: 0.5rem 1.75rem 0.5rem 0.75rem; /* 减小内边距 */
-  min-width: 180px; /* 减小最小宽度 */
-  height: 38px; /* 设置固定高度 */
-}
-
-/* 减少数字输入框内边距 */
-.number-input {
-  padding: 0.5rem;
-  height: 38px; /* 设置固定高度 */
-}
-
-/* 修复搜索按钮高度和对齐问题 */
-.search-form {
-  display: flex;
-  gap: var(--spacing-sm);
-  width: 100%;
-  align-items: center; /* 确保子元素垂直居中对齐 */
-}
-
-/* 调整搜索输入框和按钮的高度保持一致 */
-.search-input {
-  padding: 0.5rem 1rem 0.5rem 2.5rem; 
-  height: 38px; /* 确保高度为固定值 */
-  box-sizing: border-box; /* 确保内边距包含在高度内 */
-}
-
-.search-button {
-  height: 38px; /* 与输入框完全匹配 */
-  box-sizing: border-box; /* 确保内边距包含在高度内 */
-  display: flex; /* 使用flex布局 */
-  align-items: center; /* 确保按钮文字居中 */
-  justify-content: center; /* 水平居中 */
-  padding: 0 1rem; /* 水平内边距 */
-  line-height: 1; /* 重置行高 */
-}
-/* 调整数字输入框使其与其他元素保持一致 */
-.number-input {
-  width: 70px;
-  padding: 0.5rem;
-  height: 38px; /* 与其他输入元素保持一致的高度 */
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  text-align: center;
-  font-weight: 500;
-  transition: all var(--transition-normal);
-  box-sizing: border-box; /* 确保内边距包含在高度内 */
-  font-size: 0.9rem; /* 与其他输入元素字体大小一致 */
-}
-
-/* 确保所有输入元素高度一致 */
-.search-input, .select-input, .number-input, .search-button, .view-button {
-  height: 38px;
-  box-sizing: border-box;
-}
-
-/* 统一过滤器组样式 */
-.filter-group {
-  display: flex;
-  align-items: center; /* 确保垂直居中对齐 */
-  gap: 0.5rem;
-}
-
-/* 确保标签与输入框垂直对齐 */
-label {
-  display: inline-flex;
-  align-items: center;
-  height: 38px;
 }

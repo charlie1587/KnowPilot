@@ -1,7 +1,8 @@
 import React from 'react'
 import Header from './components/Header'
-import DataDisplay from './components/DataDisplay'
-// 在App.jsx或index.js中
+import DataDisplay from './components/DataDisplay';  
+
+// import css
 import './styles/index.css';
 
 function App() {
