@@ -375,3 +375,74 @@ label {
     padding: 8px 12px;
   }
 }
+/* 下拉选择器样式 - 更新为与按钮风格一致 */
+.select-input {
+  padding: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  min-width: 200px;
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 500;
+  appearance: none; /* 移除默认样式 */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1em;
+  padding-right: 2.5rem;
+}
+
+.select-input:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.select-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.4);
+}
+
+/* 修改选项样式 */
+.select-input option {
+  background-color: white;
+  color: var(--text-color);
+  padding: 10px;
+}
+
+/* 让标签和下拉选框组合更协调 */
+.control-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 0;
+}
+
+/* 统一控件间距 */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: #f1f5f9;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 调整标签文本和项对齐 */
+label[for="section-select"] {
+  margin-right: 0;
+  white-space: nowrap;
+}

@@ -12,7 +12,19 @@ from backend.database import SessionLocal
 from backend.crud import get_all_questions, get_all_facts
 from backend.models import QuestionResponse
 
+
 app = FastAPI()
+
+from fastapi.middleware.cors import CORSMiddleware
+
+# Add this after creating the FastAPI app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Vite's default port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db():
     db = SessionLocal()
