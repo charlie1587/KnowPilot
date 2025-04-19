@@ -34,6 +34,12 @@ uvicorn backend.main:app --reload
 
 Visit Swagger UI: http://127.0.0.1:8000/docs
 
+## Start the frontend
+```bash
+cd frontend
+npm run dev
+```
+
 ## LLM ollama
 ```bash
 ollama run llama3.2
