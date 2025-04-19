@@ -15,3 +15,12 @@ DB_ENGINE = db_config.get("engine", "sqlite")
 SQLITE_DB_PATH = os.path.abspath(db_config["sqlite_path"])
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{SQLITE_DB_PATH}"
 SQL_ECHO = db_config.get("echo", False)
+
+# LLM API configuration
+QA_PROMPT_TEMPLATE = """Based on the following content, generate a question and its corresponding answer:
+
+Content: {content}
+
+Format your response exactly as:
+Question: [your generated question]
+Answer: [your generated answer]"""

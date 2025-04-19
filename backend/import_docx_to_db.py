@@ -10,7 +10,9 @@ from backend.models import Base, Question
 from backend.config import SQLITE_DB_PATH
 
 def init_db_if_needed():
-    """创建数据库表如果它们不存在"""
+    """
+    Checks if the SQLite database exists and is not empty.
+    """
     print(f"Checking database at {SQLITE_DB_PATH}")
     if not os.path.exists(SQLITE_DB_PATH) or not os.path.getsize(SQLITE_DB_PATH):
         print("Creating database tables...")
@@ -18,12 +20,16 @@ def init_db_if_needed():
         print("Database tables created.")
     else:
         print("Database already exists, ensuring tables...")
-        # 确保所有表存在
+        # Ensure tables exist
         Base.metadata.create_all(bind=engine)
 
 def load_questions_from_docx(docx_path):
-    """从Word文档加载问题到数据库"""
-    # 首先确保数据库和表存在
+    """
+    Loads questions from a .docx file and inserts them into the database.
+    Args:
+        docx_path (str): Path to the .docx file.
+    """
+
     init_db_if_needed()
     
     doc = Document(docx_path)
@@ -66,14 +72,14 @@ def load_questions_from_docx(docx_path):
                         page_name=page_name,
                         audio_file=audio_file,
                         content=content,
-                        knowledge_point="To be added",  # 新增字段
-                        question="To be added",         # 新增字段
+                        knowledge_point="To be added",  
+                        question="To be added",        
                         answer="To be added"
                     )
                     session.add(q)
                     imported_count += 1
                     
-                    # 每100条数据提交一次，减轻内存压力
+                    # Every 100 records, commit to the database
                     if imported_count % 100 == 0:
                         try:
                             session.commit()

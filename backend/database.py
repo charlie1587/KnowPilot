@@ -12,4 +12,14 @@ engine = create_engine(
     echo=SQL_ECHO
 )
 
+def get_db():
+    """
+    Dependency to get the database session.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
