@@ -179,3 +179,42 @@
 .data-table tbody tr + tr {
   border-top: none; /* 确保没有额外的边框造成间距 */
 }
+/* 将此添加到您的CSS文件中 */
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 4px;
+  padding: 0;
+  background: #f0f2f5;
+  border: 1px solid #d9dde3;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-button:hover {
+  background: #e8eaed;
+  border-color: #c0c4cc;
+}
+
+.action-button svg {
+  margin: 0;
+}
+
+.qa-button {
+  color: #5b8af5;
+}
+
+.kp-button {
+  color: #6c5ce7;
+}
+
+.action-button.generating {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}

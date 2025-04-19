@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { FiSearch, FiFilter, FiGrid, FiList, FiChevronDown } from 'react-icons/fi'; // 安装: npm install react-icons
+import { FiSearch, FiFilter, FiGrid, FiList, FiChevronDown, FiHelpCircle, FiBook } from 'react-icons/fi'; 
+
+// 导入新组件
+import LoadingState from './UI/LoadingState';
+import ErrorState from './UI/ErrorState';
+import EmptyState from './UI/EmptyState';
+import Notification from './UI/Notification';
+
 
 function DataDisplay() {
   const [data, setData] = useState([]);
@@ -9,8 +16,15 @@ function DataDisplay() {
   const [showGrouped, setShowGrouped] = useState(false);
   const [activeSection, setActiveSection] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  
+  const [generating, setGenerating] = useState({}); // 跟踪正在生成的项目
+  const [notifications, setNotifications] = useState([]); // 用于显示操作结果的通知
+
   useEffect(() => {
+    fetchData();
+  }, []);
+  
+  // 提取获取数据的函数，以便在需要时刷新数据
+  const fetchData = () => {
     setLoading(true);
     fetch('http://localhost:8000/all_contents')
       .then(response => {
@@ -28,7 +42,7 @@ function DataDisplay() {
         setError(error.message);
         setLoading(false);
       });
-  }, []);
+  };
   
   const uniqueSections = [...new Set(data.map(item => item.section))];
   
@@ -45,40 +59,102 @@ function DataDisplay() {
     });
   }
   
+  // 处理生成问答
+  const handleGenerateQA = async (itemId) => {
+    try {
+      setGenerating(prev => ({ ...prev, [`qa-${itemId}`]: true }));
+      
+      // 打印请求信息，便于调试
+      console.log(`Calling API: generate-qa-single/${itemId}`);
+      
+      const response = await fetch(`http://localhost:8000/generate-qa-single/${itemId}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('API Response:', result);
+      
+      // 添加成功通知
+      addNotification('success', `Generated Q&A for item #${itemId}`);
+      
+      // 重新获取所有数据，以确保显示最新状态
+      fetchData();
+    } catch (error) {
+      console.error('Error generating QA:', error);
+      addNotification('error', `Failed to generate Q&A: ${error.message}`);
+    } finally {
+      setGenerating(prev => ({ ...prev, [`qa-${itemId}`]: false }));
+    }
+  };
+  
+  // 处理生成知识点
+  const handleGenerateKnowledge = async (itemId) => {
+    try {
+      setGenerating(prev => ({ ...prev, [`kp-${itemId}`]: true }));
+      
+      // 打印请求信息，便于调试
+      console.log(`Calling API: generate-knowledge-single/${itemId}`);
+      
+      const response = await fetch(`http://localhost:8000/generate-knowledge-single/${itemId}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('API Response:', result);
+      
+      // 添加成功通知
+      addNotification('success', `Generated knowledge point for item #${itemId}`);
+      
+      // 重新获取所有数据，以确保显示最新状态
+      fetchData();
+    } catch (error) {
+      console.error('Error generating knowledge point:', error);
+      addNotification('error', `Failed to generate knowledge point: ${error.message}`);
+    } finally {
+      setGenerating(prev => ({ ...prev, [`kp-${itemId}`]: false }));
+    }
+  };
+  
+  // 添加通知
+  const addNotification = (type, message) => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, type, message }]);
+    
+    // 5秒后自动移除通知
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(notification => notification.id !== id));
+    }, 5000);
+  };
+  
   const handleSearch = (e) => {
     e.preventDefault();
   };
   
   if (loading) {
-    return <div className="loading-container">
-      <div className="loading-spinner"></div>
-      <p>Loading course content...</p>
-    </div>;
+    return <LoadingState />;
   }
   
   if (error) {
-    return (
-      <div className="error-container">
-        <div className="error-icon">!</div>
-        <h3>Connection Error</h3>
-        <p>{error}</p>
-        <p className="error-help">Make sure the backend server is running at http://localhost:8000</p>
-      </div>
-    );
+    return <ErrorState error={error} />;
   }
 
   if (data.length === 0) {
-    return (
-      <div className="empty-container">
-        <div className="empty-icon">📂</div>
-        <h3>No Data Available</h3>
-        <p>Please make sure the database has been initialized with course content.</p>
-      </div>
-    );
+    return <EmptyState />;
   }
   
   return (
     <div className="data-display">
+      {/* 添加通知显示区域 */}
+      <Notification notifications={notifications} />
+      
       <div className="content-header">
         <h2>Thunderstorm Course Content</h2>
         <div className="content-summary">
@@ -181,6 +257,7 @@ function DataDisplay() {
                   <th>Section</th>
                   <th>Page Name</th>
                   <th>Content</th>
+                  <th className="actions-column">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -190,6 +267,24 @@ function DataDisplay() {
                     <td className="section-column">{item.section}</td>
                     <td className="page-name-column">{item.page_name}</td>
                     <td className="content-column">{item.content}</td>
+                    <td className="actions-column">
+                    <button
+                      className={`action-button qa-button ${generating[`qa-${item.id}`] ? 'generating' : ''}`}
+                      onClick={() => handleGenerateQA(item.id)}
+                      disabled={generating[`qa-${item.id}`]}
+                      title="Generate Question & Answer"
+                    >
+                      <FiHelpCircle />
+                    </button>
+                    <button
+                      className={`action-button kp-button ${generating[`kp-${item.id}`] ? 'generating' : ''}`}
+                      onClick={() => handleGenerateKnowledge(item.id)}
+                      disabled={generating[`kp-${item.id}`]}
+                      title="Generate Knowledge Point"
+                    >
+                      <FiBook />
+                    </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -210,6 +305,7 @@ function DataDisplay() {
                       <th>Section</th>
                       <th>Page Name</th>
                       <th>Content</th>
+                      <th className="actions-column">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -221,6 +317,24 @@ function DataDisplay() {
                         </td>
                         <td className="page-name-column">{item.page_name}</td>
                         <td className="content-column">{item.content}</td>
+                        <td className="actions-column">
+                          <button
+                            className={`action-button qa-button ${generating[`qa-${item.id}`] ? 'generating' : ''}`}
+                            onClick={() => handleGenerateQA(item.id)}
+                            disabled={generating[`qa-${item.id}`]}
+                            title="Generate Question & Answer"
+                          >
+                            <FiHelpCircle /> {generating[`qa-${item.id}`] ? '...' : 'QA'}
+                          </button>
+                          <button
+                            className={`action-button kp-button ${generating[`kp-${item.id}`] ? 'generating' : ''}`}
+                            onClick={() => handleGenerateKnowledge(item.id)}
+                            disabled={generating[`kp-${item.id}`]}
+                            title="Generate Knowledge Point"
+                          >
+                            <FiBrain /> {generating[`kp-${item.id}`] ? '...' : 'KP'}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -231,8 +345,7 @@ function DataDisplay() {
         )}
       </div>
     </div>
-  )
-  
+  );
 }
 
 export default DataDisplay
