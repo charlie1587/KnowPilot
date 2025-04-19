@@ -33,3 +33,18 @@ uvicorn backend.main:app --reload
 ```
 
 Visit Swagger UI: http://127.0.0.1:8000/docs
+
+## LLM ollama
+```bash
+ollama run llama3.2
+```
+
+Generate questions:
+```bash
+{
+  "model": "llama3.2",
+  "created_at": "2023-08-04T08:52:19.385406455-07:00",
+  "response": "The",
+  "done": false
+}
+```
