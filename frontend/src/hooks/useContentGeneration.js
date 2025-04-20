@@ -23,7 +23,11 @@ export default function useContentGeneration(fetchData, addNotification) {
       
       addNotification('success', `Generated Q&A for item #${itemId}`);
       
-      await fetchData();
+      // 只有在 API 调用成功时才调用 fetchData
+      await fetchData().catch(fetchError => {
+        console.error('Error fetching data after generation:', fetchError);
+        // 不显示额外的错误通知
+      });
     } catch (error) {
       console.error('Error generating QA:', error);
       addNotification('error', `Failed to generate Q&A: ${error.message}`);
@@ -51,7 +55,11 @@ export default function useContentGeneration(fetchData, addNotification) {
       
       addNotification('success', `Generated knowledge point for item #${itemId}`);
       
-      await fetchData();
+      // 只有在 API 调用成功时才调用 fetchData
+      await fetchData().catch(fetchError => {
+        console.error('Error fetching data after generation:', fetchError);
+        // 不显示额外的错误通知
+      });
     } catch (error) {
       console.error('Error generating knowledge point:', error);
       addNotification('error', `Failed to generate knowledge point: ${error.message}`);
@@ -76,9 +84,16 @@ export default function useContentGeneration(fetchData, addNotification) {
       const result = await response.json();
       console.log('API Response:', result);
       
+      // Add notification first, then fetch data without adding another notification
       addNotification('success', `Generated knowledge points for ${result.updated_count} items`);
       
-      await fetchData();
+      // Use a silent version of fetch data that won't trigger additional notifications
+      try {
+        await fetchData();
+      } catch (fetchError) {
+        console.error('Error fetching data after generation:', fetchError);
+        // Don't show another error notification here
+      }
     } catch (error) {
       console.error('Error generating all knowledge points:', error);
       addNotification('error', `Failed to generate all knowledge points: ${error.message}`);
@@ -102,9 +117,16 @@ export default function useContentGeneration(fetchData, addNotification) {
       const result = await response.json();
       console.log('API Response:', result);
       
+      // Add notification first, then fetch data without adding another notification
       addNotification('success', `Cleared knowledge points for ${result.updated_count} items`);
       
-      await fetchData();
+      // Use a silent version of fetch data that won't trigger additional notifications
+      try {
+        await fetchData();
+      } catch (fetchError) {
+        console.error('Error fetching data after clearing:', fetchError);
+        // Don't show another error notification here
+      }
     } catch (error) {
       console.error('Error clearing knowledge points:', error);
       addNotification('error', `Failed to clear knowledge points: ${error.message}`);
