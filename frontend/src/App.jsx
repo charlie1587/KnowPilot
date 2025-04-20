@@ -1,18 +1,25 @@
 import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
-import DataDisplay from './components/DataDisplay';  
+import DataDisplay from './components/DataDisplay'
+import QuestionsPage from './components/QuestionsPage'
 
 // import css
-import './styles/index.css';
+import './styles/index.css'
 
 function App() {
   return (
-    <div className="app-container">
-      <div className="app-main">
+    <Router>
+      <div className="app-container">
         <Header />
-        <DataDisplay />
+        <div className="content-container">
+          <Routes>
+            <Route path="/" element={<DataDisplay />} />
+            <Route path="/questions" element={<QuestionsPage />} />
+          </Routes>
+        </div>
       </div>
-    </div>
+    </Router>
   );
 }
 

@@ -1,4 +1,3 @@
-/* 导入所有CSS模块 */
 @import './variables.css';
 @import './reset.css';
 @import './layout.css';
@@ -6,4 +5,5 @@
 @import './components/controls.css';
 @import './components/tables.css';
 @import './components/cards.css';
+@import './components/navbar.css';
 @import './utilities.css';

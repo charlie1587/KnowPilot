@@ -1,0 +1,85 @@
+.navbar {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.navbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Popup menu card styles */
+.navbar-popup {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  transform: translateY(-20px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.navbar-popup.active {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.navbar-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  width: 200px;
+}
+
+.nav-menu {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.nav-item {
+  margin: 0;
+}
+
+.nav-link {
+  color: #4667cc;
+  display: block;
+  text-decoration: none;
+  padding: 12px 20px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: #f5f7ff;
+}
+
+.nav-link.active {
+  background-color: rgba(70, 103, 204, 0.1);
+  color: #324f9e;
+  font-weight: bold;
+}
+
+/* Remove the dropdown indicator from logo since we now use a dedicated button */
+.logo-container {
+  cursor: default;
+  display: flex;
+  align-items: center;
+  transition: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+.logo-container:hover {
+  background-color: transparent;
+}

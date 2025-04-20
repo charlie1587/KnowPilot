@@ -29,20 +29,20 @@ class ContentGroup(Base):
     Model for content groups with question and answer.
     """
     __tablename__ = "content_groups"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    
+
     # Content columns (you can add as many as needed based on the value of k)
     content1 = Column(Text, nullable=True)
     content2 = Column(Text, nullable=True)
     content3 = Column(Text, nullable=True)
     content4 = Column(Text, nullable=True)
     content5 = Column(Text, nullable=True)
-    
+
     # Question and answer
     question = Column(Text, nullable=True)
     correct_answer = Column(Text, nullable=True)
-    
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
