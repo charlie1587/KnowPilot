@@ -4,7 +4,6 @@ Currently includes the Question and ContentGroup models.
 """
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime
-from sqlalchemy.orm import declarative_base
 from pydantic import BaseModel
 from backend.database import Base
 

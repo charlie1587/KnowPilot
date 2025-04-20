@@ -83,6 +83,7 @@ def create_content_group_table(k: int, db: Session = Depends(get_db)):
 def create_and_fill_table(k: int, db: Session = Depends(get_db)):
     """
     Create a table with k content columns and fill it with data from the questions table.
+    If the table already exists, no action is taken.
     
     Args:
         k: Number of content columns to include
@@ -96,11 +97,20 @@ def create_and_fill_table(k: int, db: Session = Depends(get_db)):
     if k > 20:  # Set a reasonable limit
         raise HTTPException(status_code=400, detail="Too many content columns requested (max 20)")
 
+    # Check if table already exists before proceeding
+    table_name = f"content_group_{k}"
+    inspector = inspect(engine)
+    if inspector.has_table(table_name):
+        return {
+            "status": "not_modified",
+            "message": f"Table '{table_name}' already exists. No action taken.",
+            "table_name": table_name
+        }
+
     # First, create the table by calling the existing endpoint
     table_response = create_content_group_table(k, db)
-    table_name = f"content_group_{k}"
     
-    # If the table was created or already exists, proceed to fill it with data
+    # If the table was created, proceed to fill it with data
     try:
         # Get all questions from the database
         questions = db.query(Question).all()
@@ -119,6 +129,9 @@ def create_and_fill_table(k: int, db: Session = Depends(get_db)):
         if current_group:
             question_groups.append(current_group)
         
+        # Current timestamp for created_at and updated_at
+        current_time = datetime.now()
+        
         # Insert data into the new table
         rows_inserted = 0
         for group in question_groups:
@@ -132,6 +145,10 @@ def create_and_fill_table(k: int, db: Session = Depends(get_db)):
             
             # Only proceed if we have at least one content value
             if content_values:
+                # Add timestamp fields
+                content_values['created_at'] = current_time
+                content_values['updated_at'] = current_time
+                
                 # Construct column names and placeholder values for the SQL query
                 column_names = list(content_values.keys())
                 
@@ -148,9 +165,9 @@ def create_and_fill_table(k: int, db: Session = Depends(get_db)):
         db.commit()
         
         return {
-            "table_status": table_response["status"],
+            "status": "created",
             "table_name": table_name,
-            "message": f"Table created/verified and filled with data from questions table",
+            "message": f"Table created and filled with data from questions table",
             "groups_inserted": rows_inserted,
             "questions_used": min(len(questions), rows_inserted * k),
             "total_questions": len(questions)
