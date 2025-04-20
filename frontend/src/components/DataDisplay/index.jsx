@@ -9,6 +9,7 @@ import ContentHeader from './ContentHeader';
 import ControlPanel from './ControlPanel';
 import TableView from './TableView';
 import GroupView from './GroupView';
+import ExpandedRow from './ExpandedRow';
 
 // import hooks
 import useNotification from '../../hooks/useNotification';
@@ -94,6 +95,59 @@ function DataDisplay() {
           />
         )}
       </div>
+    </div>
+  );
+}
+
+function DataTable({ data, columns }) {
+  const [expandedRows, setExpandedRows] = useState({});
+
+  const toggleRowExpand = (rowId) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [rowId]: !prev[rowId]
+    }));
+  };
+
+  return (
+    <div className="table-container">
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th className="expand-column" aria-label="Expand/Collapse">Actions</th> {/* Fixed empty header with text */}
+            {columns.map(column => (
+              <th key={column.key}>{column.title}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(item => (
+            <React.Fragment key={item.id || item._id}>
+              <tr className={expandedRows[item.id || item._id] ? 'active-row' : ''}>
+                <td>
+                  <button 
+                    className="expand-button"
+                    onClick={() => toggleRowExpand(item.id || item._id)}
+                    aria-label={expandedRows[item.id || item._id] ? "Collapse row" : "Expand row"}
+                  >
+                    {expandedRows[item.id || item._id] ? '−' : '+'}
+                  </button>
+                </td>
+                {columns.map(column => (
+                  <td key={column.key}>{item[column.dataIndex]}</td>
+                ))}
+              </tr>
+              {expandedRows[item.id || item._id] && (
+                <tr className="expanded-row-container">
+                  <td colSpan={columns.length + 1}>
+                    <ExpandedRow item={item} />
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
