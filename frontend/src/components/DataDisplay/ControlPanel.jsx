@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiSearch, FiFilter, FiGrid, FiList, FiChevronDown } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiGrid, FiList, FiChevronDown, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
 
 function ControlPanel({
   searchQuery,
@@ -12,7 +12,10 @@ function ControlPanel({
   uniqueSections,
   rowsPerGroup,
   setRowsPerGroup,
-  filteredDataLength
+  filteredDataLength,
+  handleGenerateAllKnowledge,
+  handleClearAllKnowledge,
+  processingAll
 }) {
   return (
     <div className="controls-container">
@@ -89,6 +92,27 @@ function ControlPanel({
                 />
               </div>
             )}
+            
+            <div className="knowledge-buttons">
+              <button 
+                onClick={handleGenerateAllKnowledge} 
+                className="knowledge-button generate"
+                title="Generate all knowledge points"
+                disabled={processingAll}
+              >
+                <FiRefreshCw className={`button-icon ${processingAll ? 'spinning' : ''}`} />
+                <span>Generate Knowledge</span>
+              </button>
+              <button 
+                onClick={handleClearAllKnowledge} 
+                className="knowledge-button clear"
+                title="Clear all knowledge points"
+                disabled={processingAll}
+              >
+                <FiTrash2 className="button-icon" />
+                <span>Clear Knowledge</span>
+              </button>
+            </div>
           </div>
           
           <div className="data-count">

@@ -26,8 +26,14 @@ function DataDisplay() {
   // Use custom hooks
   const { data, loading, error, fetchData } = useDataFetching();
   const { notifications, addNotification } = useNotification();
-  const { generating, handleGenerateQA, handleGenerateKnowledge } = 
-    useContentGeneration(fetchData, addNotification);
+  const { 
+    generating, 
+    processingAll,
+    handleGenerateQA, 
+    handleGenerateKnowledge,
+    handleGenerateAllKnowledge,
+    handleClearAllKnowledge
+  } = useContentGeneration(fetchData, addNotification);
   
   // Filter and group data
   const uniqueSections = [...new Set(data.map(item => item.section))];
@@ -76,6 +82,9 @@ function DataDisplay() {
         rowsPerGroup={rowsPerGroup}
         setRowsPerGroup={setRowsPerGroup}
         filteredDataLength={filteredData.length}
+        handleGenerateAllKnowledge={handleGenerateAllKnowledge}
+        handleClearAllKnowledge={handleClearAllKnowledge}
+        processingAll={processingAll}
       />
       
       <div className="data-container">

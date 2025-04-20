@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 export default function useContentGeneration(fetchData, addNotification) {
   const [generating, setGenerating] = useState({});
+  const [processingAll, setProcessingAll] = useState(false);
 
   const handleGenerateQA = async (itemId) => {
     try {
@@ -59,5 +60,65 @@ export default function useContentGeneration(fetchData, addNotification) {
     }
   };
 
-  return { generating, handleGenerateQA, handleGenerateKnowledge };
+  const handleGenerateAllKnowledge = async () => {
+    try {
+      setProcessingAll(true);
+      addNotification('info', 'Generating all knowledge points. This may take a while...');
+      
+      const response = await fetch('http://localhost:8000/generate-knowledge-all');
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('API Response:', result);
+      
+      addNotification('success', `Generated knowledge points for ${result.updated_count} items`);
+      
+      await fetchData();
+    } catch (error) {
+      console.error('Error generating all knowledge points:', error);
+      addNotification('error', `Failed to generate all knowledge points: ${error.message}`);
+    } finally {
+      setProcessingAll(false);
+    }
+  };
+
+  const handleClearAllKnowledge = async () => {
+    try {
+      setProcessingAll(true);
+      
+      const response = await fetch('http://localhost:8000/clear-all-knowledge-points');
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('API Response:', result);
+      
+      addNotification('success', `Cleared knowledge points for ${result.updated_count} items`);
+      
+      await fetchData();
+    } catch (error) {
+      console.error('Error clearing knowledge points:', error);
+      addNotification('error', `Failed to clear knowledge points: ${error.message}`);
+    } finally {
+      setProcessingAll(false);
+    }
+  };
+
+  return { 
+    generating, 
+    processingAll,
+    handleGenerateQA, 
+    handleGenerateKnowledge,
+    handleGenerateAllKnowledge,
+    handleClearAllKnowledge
+  };
 }
