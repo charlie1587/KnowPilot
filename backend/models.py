@@ -1,13 +1,12 @@
 """
 models.py - Defines SQLAlchemy ORM models for database tables.
-Currently includes the Question model.
+Currently includes the Question and ContentGroup models.
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.orm import declarative_base
 from pydantic import BaseModel
-
-Base = declarative_base()
+from backend.database import Base
 
 class Question(Base):
     """
@@ -25,6 +24,29 @@ class Question(Base):
     question = Column(String(1000), default="To be added")
     answer = Column(String(1000), default="To be added")
     created_at = Column(DateTime, default=datetime.now)
+
+class ContentGroup(Base):
+    """
+    Model for content groups with question and answer.
+    """
+    __tablename__ = "content_groups"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Content columns (you can add as many as needed based on the value of k)
+    content1 = Column(Text, nullable=True)
+    content2 = Column(Text, nullable=True)
+    content3 = Column(Text, nullable=True)
+    content4 = Column(Text, nullable=True)
+    content5 = Column(Text, nullable=True)
+    
+    # Question and answer
+    question = Column(Text, nullable=True)
+    correct_answer = Column(Text, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 class QuestionResponse(BaseModel):
     """

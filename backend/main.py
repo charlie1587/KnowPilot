@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import routers
-from backend.routers import content, knowledge, qa
+from backend.routers import content, knowledge, qa, content_group
 
 # Create FastAPI instance
 app = FastAPI(title="KnowPilot API")
@@ -28,6 +28,7 @@ app.add_middleware(
 app.include_router(content.router)
 app.include_router(knowledge.router)
 app.include_router(qa.router)
+app.include_router(content_group.router)
 
 # Health check endpoint
 @app.get("/")
