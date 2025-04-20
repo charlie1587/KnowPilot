@@ -12,13 +12,46 @@ from backend.services.llm_services import call_llm
 from backend.config import KNOWLEDGE_PROMPT_TEMPLATE
 from backend.schemas import QuestionResponse
 
-# TODO: remove chinese comments
 # TODO: move promt to config
 # TODO: add a parameter to control whether to skip 
 
 router = APIRouter(
     tags=["knowledge generation"],
 )
+
+@router.get("/clear-all-knowledge-points")
+def clear_all_knowledge_points(db: Session = Depends(get_db)):
+    """
+    Clear all knowledge points by resetting them to 'To be added'.
+    
+    Returns:
+        dict: A dictionary containing status and count of updated records.
+    """
+    try:
+        # Create a statement to update all knowledge_point fields to "To be added"
+        stmt = (
+            update(Question)
+            .values(knowledge_point="To be added")
+        )
+        
+        # Execute the statement
+        result = db.execute(stmt)
+        
+        # Get the number of affected rows
+        affected_rows = result.rowcount
+        
+        # Commit the transaction
+        db.commit()
+        
+        return {
+            "status": "success",
+            "message": f"Successfully cleared {affected_rows} knowledge points",
+            "updated_count": affected_rows
+        }
+    except Exception as e:
+        # Rollback in case of error
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error clearing knowledge points: {str(e)}")
 
 @router.get("/generate-knowledge-single/{question_id}", response_model=dict)
 def generate_knowledge_single(question_id: int, db: Session = Depends(get_db)):
