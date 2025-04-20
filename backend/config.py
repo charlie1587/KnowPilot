@@ -24,3 +24,16 @@ Content: {content}
 Format your response exactly as:
 Question: [your generated question]
 Answer: [your generated answer]"""
+
+KNOWLEDGE_PROMPT_TEMPLATE = """Identify the key knowledge point from the following content.
+    
+Content: {content}
+
+Important instructions:
+1. Provide ONLY the knowledge point itself without any prefixes like "The key knowledge is" or similar phrases
+2. Keep it concise (1-2 sentences maximum)
+3. Focus on the core concept
+4. Start directly with the knowledge point
+5. Use simple, clear language
+
+Knowledge point:"""

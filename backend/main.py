@@ -1,3 +1,6 @@
+"""
+FastAPI application for the KnowPilot API.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -29,4 +32,8 @@ app.include_router(qa.router)
 # Health check endpoint
 @app.get("/")
 def read_root():
+    """
+    Health check endpoint.
+    Returns a simple message indicating that the API is running.
+    """
     return {"status": "healthy", "message": "KnowPilot API is running"}
