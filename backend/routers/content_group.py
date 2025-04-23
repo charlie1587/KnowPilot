@@ -16,6 +16,7 @@ from backend.exceptions import (
     handle_processing_error,
     handle_db_operation_error
 )
+from backend.config import CONTENT_GROUP_QUESTION_TEMPLATE
 
 router = APIRouter(
     prefix="/content-group",
@@ -23,7 +24,7 @@ router = APIRouter(
 )
 
 @router.post("/create-table")
-def create_content_group_table(k: int, db: Session = Depends(get_db)):
+def create_content_group_table(k: int, db: Session = Depends(get_db)):  # pylint: disable=unused-argument
     """
     Create a table with k content columns plus question and answer.
     
@@ -49,12 +50,16 @@ def create_content_group_table(k: int, db: Session = Depends(get_db)):
             # Get column information for the existing table
             columns = inspector.get_columns(table_name)
             content_columns = [col['name'] for col in columns if col['name'].startswith('content')]
+            column_names = [col['name'] for col in columns]
+
+            table_exists_msg = f"Table '{table_name}' already exists with "
+            table_exists_msg += f"{len(content_columns)} content columns"
 
             return {
                 "status": "not_modified",
-                "message": f"Table '{table_name}' already exists with {len(content_columns)} content columns",
+                "message": table_exists_msg,
                 "table_name": table_name,
-                "columns": [col['name'] for col in columns]
+                "columns": column_names
             }
 
         # Define the dynamic model
@@ -77,11 +82,20 @@ def create_content_group_table(k: int, db: Session = Depends(get_db)):
         # Register the model with SQLAlchemy metadata
         Base.metadata.create_all(engine, [DynamicModel.__table__], checkfirst=True)  # pylint: disable=no-member
 
+        # Prepare column list for return
+        column_list = ["id"] 
+        column_list.extend([f"content{i}" for i in range(1, k+1)])
+        column_list.extend(["question", "correct_answer", "created_at", "updated_at"])
+
+
+        success_msg = f"Table '{table_name}' created successfully "
+        success_msg += f"with {k} content columns"
+
         return {
             "status": "created",
-            "message": f"Table '{table_name}' created successfully with {k} content columns",
+            "message": success_msg,
             "table_name": table_name,
-            "columns": ["id"] + [f"content{i}" for i in range(1, k+1)] + ["question", "correct_answer", "created_at", "updated_at"]
+            "columns": column_list
         }
     except Exception as e:
         raise handle_processing_error(e, "creating table") from e
@@ -202,9 +216,6 @@ def generate_questions_for_all_rows(k: int, db: Session = Depends(get_db)):
         columns = [row[1] for row in result_proxy.fetchall()]
         content_column_names = [col for col in columns if col.startswith('content')]
 
-        if not content_column_names:
-            raise HTTPException(status_code=404, detail=f"No content columns found in table {table_name}")
-
         # Get all rows from the table
         query = text(f"SELECT * FROM {table_name}")
         results = db.execute(query).fetchall()
@@ -213,7 +224,8 @@ def generate_questions_for_all_rows(k: int, db: Session = Depends(get_db)):
             raise HTTPException(status_code=404, detail=f"No data found in table {table_name}")
 
         # Get the primary key index
-        pk_columns = inspector.get_pk_constraint(table_name)['constrained_columns']
+        pk_constraint = inspector.get_pk_constraint(table_name)
+        pk_columns = pk_constraint['constrained_columns']
         pk_index = columns.index(pk_columns[0]) if pk_columns else 0
 
         # Count success and failure
@@ -246,16 +258,7 @@ def generate_questions_for_all_rows(k: int, db: Session = Depends(get_db)):
                 correct_column, correct_content = random.choice(list(content_columns.items()))
                 correct_number = correct_column.replace('content', '')
 
-                # generate a question based on the content
-                prompt = f"""
-                Create a single-choice question based on this content: "{correct_content}"
-                
-                The question should test the understanding of this specific content.
-                
-                Format your response exactly as follows:
-                Question: [your question here]
-                """
-
+                prompt = CONTENT_GROUP_QUESTION_TEMPLATE.format(content=correct_content)
                 response = call_llm(prompt, max_tokens=200)
 
                 # extract the question text from the response
@@ -291,7 +294,7 @@ def generate_questions_for_all_rows(k: int, db: Session = Depends(get_db)):
                     "correct_answer": correct_number
                 })
 
-            except Exception as row_error:
+            except ValueError as row_error:  # Adjust the exception type based on expected errors
                 failure_count += 1
                 processed_rows.append({
                     "row_id": row_id if 'row_id' in locals() else "unknown",
