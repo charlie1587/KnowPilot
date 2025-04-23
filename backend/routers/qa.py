@@ -1,5 +1,6 @@
 """
-@file content.py
+@file qa.py
+Handles Q&A generation routes.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -11,6 +12,11 @@ from backend.crud import get_all_questions
 from backend.schemas import QuestionResponse
 from backend.services.llm_services import call_llm
 from backend.config import QA_PROMPT_TEMPLATE
+from backend.exceptions import (
+    resource_not_found,
+    handle_processing_error,
+    format_bulk_operation_result
+)
 
 router = APIRouter(
     tags=["qa generation"],
@@ -24,7 +30,7 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
     # Get the question by ID
     question = db.query(Question).filter(Question.id == question_id).first()
     if not question:
-        raise HTTPException(status_code=404, detail=f"Question with ID {question_id} not found")
+        raise resource_not_found("Question", question_id)
 
     # Generate prompt
     prompt = QA_PROMPT_TEMPLATE.format(content=question.content)
@@ -44,8 +50,8 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
             question_part = next((p.replace("Question:", "").strip() 
                                 for p in parts if p.startswith("Question:")), "")
             answer_part = next((p.replace("Answer:", "").strip() 
-                                for p in parts if p.startswith("Answer:")), "")
-
+                              for p in parts if p.startswith("Answer:")), "")
+        
         # Update the database record
         if question_part and answer_part:
             stmt = (
@@ -55,10 +61,10 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
             )
             db.execute(stmt)
             db.commit()
-
+            
             # Refresh the question object to get updated values
             question = db.query(Question).filter(Question.id == question_id).first()
-
+            
             return {
                 "status": "success",
                 "question_id": question_id,
@@ -66,9 +72,9 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
             }
         else:
             raise HTTPException(status_code=500, detail="Failed to generate question and answer")
-
+            
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing response: {str(e)}") from e
+        raise handle_processing_error(e, "processing QA generation response") from e
 
 
 @router.get("/generate-qa-all")
@@ -97,20 +103,18 @@ def generate_qa_all(db: Session = Depends(get_db)):
             prompt = QA_PROMPT_TEMPLATE.format(content=question.content)
 
             response = call_llm(prompt, max_tokens=200)
-
+            
             try:
-
                 if "Question:" in response and "Answer:" in response:
                     question_part = response.split("Question:")[1].split("Answer:")[0].strip()
                     answer_part = response.split("Answer:")[1].strip()
                 else:
-
                     parts = response.split("\n")
                     question_part = next((p.replace("Question:", "").strip() 
                                         for p in parts if p.startswith("Question:")), "")
                     answer_part = next((p.replace("Answer:", "").strip() 
-                                        for p in parts if p.startswith("Answer:")), "")
-
+                                      for p in parts if p.startswith("Answer:")), "")
+                
                 if question_part and answer_part:
                     stmt = (
                         update(Question)
@@ -125,26 +129,25 @@ def generate_qa_all(db: Session = Depends(get_db)):
                         "error": "Failed to parse LLM response", 
                         "response": response
                     })
-
+                    
             except Exception as e:
                 failures.append({
                     "id": question.id, 
                     "error": f"Parsing error: {str(e)}", 
                     "response": response
                 })
-
+                
         except Exception as e:
             failures.append({
                 "id": question.id, 
                 "error": str(e)
             })
-
+    
     db.commit()
-
-    return {
-        "status": "complete",
-        "total_questions": len(all_questions),
-        "updated_count": updated_count,
-        "failures": failures if failures else None
-    }
+    
+    return format_bulk_operation_result(
+        total_items=len(all_questions),
+        updated_count=updated_count,
+        failures=failures
+    )
 

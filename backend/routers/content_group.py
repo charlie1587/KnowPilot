@@ -1,5 +1,6 @@
 """
-Router for content grouping operations - simple version.
+@file content_group.py
+Router for content grouping operations.
 """
 from datetime import datetime
 import random
@@ -10,6 +11,11 @@ from sqlalchemy import Column, Text, Integer, DateTime, inspect, text
 from backend.services.llm_services import call_llm
 from backend.database import get_db, engine, Base
 from backend.models import Question
+from backend.exceptions import (
+    bad_request, 
+    handle_processing_error,
+    handle_db_operation_error
+)
 
 router = APIRouter(
     prefix="/content-group",
@@ -28,10 +34,10 @@ def create_content_group_table(k: int, db: Session = Depends(get_db)):
         Success message
     """
     if k <= 0:
-        raise HTTPException(status_code=400, detail="Number of content columns must be positive")
+        raise bad_request("Number of content columns must be positive")
 
     if k > 20:  # Set a reasonable limit
-        raise HTTPException(status_code=400, detail="Too many content columns requested (max 20)")
+        raise bad_request("Too many content columns requested (max 20)")
 
     # Create a dynamic model with k content columns
     table_name = f"content_group_{k}"
@@ -41,13 +47,12 @@ def create_content_group_table(k: int, db: Session = Depends(get_db)):
         inspector = inspect(engine)
         if inspector.has_table(table_name):
             # Get column information for the existing table
-            message = f"Table '{table_name}' already exists with {len(content_columns)} content columns"
             columns = inspector.get_columns(table_name)
             content_columns = [col['name'] for col in columns if col['name'].startswith('content')]
 
             return {
                 "status": "not_modified",
-                "message": message,
+                "message": f"Table '{table_name}' already exists with {len(content_columns)} content columns",
                 "table_name": table_name,
                 "columns": [col['name'] for col in columns]
             }
@@ -72,17 +77,14 @@ def create_content_group_table(k: int, db: Session = Depends(get_db)):
         # Register the model with SQLAlchemy metadata
         Base.metadata.create_all(engine, [DynamicModel.__table__], checkfirst=True)  # pylint: disable=no-member
 
-        columns = ["id"] + [f"content{i}" for i in range(1, k+1)]
-        columns = columns + ["question", "correct_answer", "created_at", "updated_at"] 
-
         return {
             "status": "created",
             "message": f"Table '{table_name}' created successfully with {k} content columns",
             "table_name": table_name,
-            "columns": columns
+            "columns": ["id"] + [f"content{i}" for i in range(1, k+1)] + ["question", "correct_answer", "created_at", "updated_at"]
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error creating table: {str(e)}") from e
+        raise handle_processing_error(e, "creating table") from e
 
 @router.post("/create-and-fill-table")
 def create_and_fill_table(k: int, db: Session = Depends(get_db)):
@@ -97,10 +99,10 @@ def create_and_fill_table(k: int, db: Session = Depends(get_db)):
         Success message with details about the created/filled table
     """
     if k <= 0:
-        raise HTTPException(status_code=400, detail="Number of content columns must be positive")
+        raise bad_request("Number of content columns must be positive")
 
     if k > 20:  # Set a reasonable limit
-        raise HTTPException(status_code=400, detail="Too many content columns requested (max 20)")
+        raise bad_request("Too many content columns requested (max 20)")
 
     # Check if table already exists before proceeding
     table_name = f"content_group_{k}"
@@ -179,9 +181,8 @@ def create_and_fill_table(k: int, db: Session = Depends(get_db)):
         }
 
     except Exception as e:
-        # Rollback in case of error
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error filling table with data: {str(e)}") from e
+        # Use the db operation error handler
+        raise handle_db_operation_error(e, db, "filling table with data") from e
 
 
 @router.post("/generate-questions-for-all/{k}", response_model=dict)

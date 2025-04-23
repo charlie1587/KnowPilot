@@ -1,7 +1,8 @@
 """
-@file content.py
+@file knowledge.py
+Handles knowledge point generation routes.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import update
 
@@ -11,9 +12,12 @@ from backend.crud import get_all_questions
 from backend.services.llm_services import call_llm
 from backend.config import KNOWLEDGE_PROMPT_TEMPLATE
 from backend.schemas import QuestionResponse
+from backend.exceptions import (
+    resource_not_found,
+    handle_db_operation_error,
+    format_bulk_operation_result
+)
 
-# TODO: move promt to config
-# TODO: add a parameter to control whether to skip 
 
 router = APIRouter(
     tags=["knowledge generation"],
@@ -33,35 +37,34 @@ def clear_all_knowledge_points(db: Session = Depends(get_db)):
             update(Question)
             .values(knowledge_point="To be added")
         )
-        
+
         # Execute the statement
         result = db.execute(stmt)
-        
+
         # Get the number of affected rows
         affected_rows = result.rowcount
-        
+
         # Commit the transaction
         db.commit()
-        
+
         return {
             "status": "success",
             "message": f"Successfully cleared {affected_rows} knowledge points",
             "updated_count": affected_rows
         }
     except Exception as e:
-        # Rollback in case of error
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error clearing knowledge points: {str(e)}") from e
+        # Use the db operation error handler
+        raise handle_db_operation_error(e, db, "clearing knowledge points") from e
 
 @router.get("/generate-knowledge-single/{question_id}", response_model=dict)
 def generate_knowledge_single(question_id: int, db: Session = Depends(get_db)):
     """
     Generate a knowledge point for a single question and update the database.
     """
-
+    # Get the question by ID
     question = db.query(Question).filter(Question.id == question_id).first()
     if not question:
-        raise HTTPException(status_code=404, detail=f"Question with ID {question_id} not found")
+        raise resource_not_found("Question", question_id)
 
     prompt = KNOWLEDGE_PROMPT_TEMPLATE.format(content=question.content)
 
@@ -113,18 +116,13 @@ def generate_knowledge_all(db: Session = Depends(get_db)):
     """
     Generate knowledge points for all questions and update the database.
     """
-
     all_questions = get_all_questions(db)
-
     updated_count = 0
-
     failures = []
 
     for question in all_questions:
         try:
-
             prompt = KNOWLEDGE_PROMPT_TEMPLATE.format(content=question.content)
-
             response = call_llm(prompt, max_tokens=100)
 
             knowledge_point = response.strip()
@@ -159,18 +157,17 @@ def generate_knowledge_all(db: Session = Depends(get_db)):
                     "error": "Failed to generate knowledge point", 
                     "response": response
                 })
-
+                
         except Exception as e:
             failures.append({
                 "id": question.id, 
                 "error": str(e)
             })
-
+    
     db.commit()
-
-    return {
-        "status": "complete",
-        "total_questions": len(all_questions),
-        "updated_count": updated_count,
-        "failures": failures if failures else None
-    }
+    
+    return format_bulk_operation_result(
+        total_items=len(all_questions),
+        updated_count=updated_count,
+        failures=failures
+    )
