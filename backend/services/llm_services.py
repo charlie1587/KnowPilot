@@ -1,3 +1,7 @@
+"""
+llm_services.py
+This module contains functions to interact with the LLM (Large Language Model) API.
+"""
 import json
 import requests
 from fastapi import HTTPException
@@ -46,4 +50,4 @@ def call_llm(prompt: str,
         return full_response.strip()
 
     except requests.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}") from e

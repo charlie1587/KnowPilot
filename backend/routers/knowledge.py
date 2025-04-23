@@ -51,7 +51,7 @@ def clear_all_knowledge_points(db: Session = Depends(get_db)):
     except Exception as e:
         # Rollback in case of error
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error clearing knowledge points: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error clearing knowledge points: {str(e)}") from e
 
 @router.get("/generate-knowledge-single/{question_id}", response_model=dict)
 def generate_knowledge_single(question_id: int, db: Session = Depends(get_db)):
@@ -159,7 +159,7 @@ def generate_knowledge_all(db: Session = Depends(get_db)):
                     "error": "Failed to generate knowledge point", 
                     "response": response
                 })
-                
+
         except Exception as e:
             failures.append({
                 "id": question.id, 

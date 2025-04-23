@@ -25,13 +25,13 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
     question = db.query(Question).filter(Question.id == question_id).first()
     if not question:
         raise HTTPException(status_code=404, detail=f"Question with ID {question_id} not found")
-    
+
     # Generate prompt
     prompt = QA_PROMPT_TEMPLATE.format(content=question.content)
 
     # Use LLM API to generate question and answer
     response = call_llm(prompt, max_tokens=200)
-    
+
     # Update the question and answer in the database
     try:
         # Use string splitting to extract question and answer
@@ -44,8 +44,8 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
             question_part = next((p.replace("Question:", "").strip() 
                                 for p in parts if p.startswith("Question:")), "")
             answer_part = next((p.replace("Answer:", "").strip() 
-                              for p in parts if p.startswith("Answer:")), "")
-        
+                                for p in parts if p.startswith("Answer:")), "")
+
         # Update the database record
         if question_part and answer_part:
             stmt = (
@@ -55,10 +55,10 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
             )
             db.execute(stmt)
             db.commit()
-            
+
             # Refresh the question object to get updated values
             question = db.query(Question).filter(Question.id == question_id).first()
-            
+
             return {
                 "status": "success",
                 "question_id": question_id,
@@ -66,9 +66,9 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
             }
         else:
             raise HTTPException(status_code=500, detail="Failed to generate question and answer")
-            
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing response: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing response: {str(e)}") from e
 
 
 @router.get("/generate-qa-all")
@@ -78,13 +78,13 @@ def generate_qa_all(db: Session = Depends(get_db)):
     """
     # Get all questions from the database
     all_questions = get_all_questions(db)
-    
+
     # Set the count of updated records
     updated_count = 0
-    
+
     # List to store failures
     failures = []
-    
+
     for question in all_questions:
         try:
             # Skip if question already has a question and answer
@@ -97,7 +97,7 @@ def generate_qa_all(db: Session = Depends(get_db)):
             prompt = QA_PROMPT_TEMPLATE.format(content=question.content)
 
             response = call_llm(prompt, max_tokens=200)
-            
+
             try:
 
                 if "Question:" in response and "Answer:" in response:
@@ -109,8 +109,8 @@ def generate_qa_all(db: Session = Depends(get_db)):
                     question_part = next((p.replace("Question:", "").strip() 
                                         for p in parts if p.startswith("Question:")), "")
                     answer_part = next((p.replace("Answer:", "").strip() 
-                                      for p in parts if p.startswith("Answer:")), "")
-                
+                                        for p in parts if p.startswith("Answer:")), "")
+
                 if question_part and answer_part:
                     stmt = (
                         update(Question)
@@ -125,22 +125,22 @@ def generate_qa_all(db: Session = Depends(get_db)):
                         "error": "Failed to parse LLM response", 
                         "response": response
                     })
-                    
+
             except Exception as e:
                 failures.append({
                     "id": question.id, 
                     "error": f"Parsing error: {str(e)}", 
                     "response": response
                 })
-                
+
         except Exception as e:
             failures.append({
                 "id": question.id, 
                 "error": str(e)
             })
-    
+
     db.commit()
-    
+
     return {
         "status": "complete",
         "total_questions": len(all_questions),
