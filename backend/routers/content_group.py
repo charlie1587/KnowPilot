@@ -310,3 +310,48 @@ def generate_questions_for_all_rows(k: int, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error generating questions: {str(e)}")
+
+@router.get("/get-data/{k}", response_model=list)
+def get_content_group_data(k: int, db: Session = Depends(get_db)):
+    """
+    获取指定 k 的 content_group_k 表中的所有数据
+    
+    Args:
+        k: 内容组的大小
+        
+    Returns:
+        表中的所有行数据
+    """
+    try:
+        # 检查content group k表是否存在
+        table_name = f"content_group_{k}"
+        inspector = inspect(engine)
+        if not inspector.has_table(table_name):
+            raise HTTPException(status_code=404, detail=f"Table {table_name} does not exist")
+        
+        # 获取表中的列名
+        result_proxy = db.execute(text(f"PRAGMA table_info({table_name})"))
+        columns = [row[1] for row in result_proxy.fetchall()]
+        
+        # 获取表中的所有行
+        query = text(f"SELECT * FROM {table_name}")
+        result = db.execute(query).fetchall()
+        
+        if not result:
+            return []
+        
+        # 将结果转换为字典列表，以便返回JSON
+        rows = []
+        for row in result:
+            row_dict = {}
+            for i, col_name in enumerate(columns):
+                if i < len(row):
+                    row_dict[col_name] = row[i]
+            rows.append(row_dict)
+        
+        return rows
+        
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching data: {str(e)}")
