@@ -140,7 +140,6 @@ const Knowledge = () => {
       <div className="content-header">
         <h2>Knowledge Management</h2>
         <div className="content-summary">
-          <span>{filteredData.length} knowledge points</span>
         </div>
       </div>
       
