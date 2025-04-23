@@ -80,3 +80,144 @@
   background-color: #edf2fd;
   border-radius: 4px;
 }
+
+/* New styles for create table form */
+.create-table-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-group label {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.number-input {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 6px 12px;
+  width: 100px;
+}
+
+.create-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.create-button:hover {
+  background-color: var(--primary-dark);
+}
+
+/* Search container styles */
+.search-container {
+  flex: 1;
+}
+
+.search-form {
+  width: 100%;
+}
+
+.search-input-group {
+  position: relative;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 8px 8px 36px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.2);
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.action-button.regenerate {
+  background-color: #edf2fd;
+  color: var(--primary-color);
+}
+
+.action-button.regenerate:hover {
+  background-color: #dce6fc;
+}
+
+.action-button.expand-all {
+  background-color: #f0f0f0;
+  color: var(--text-primary);
+}
+
+.action-button.expand-all:hover {
+  background-color: #e0e0e0;
+}
+
+.button-icon {
+  font-size: 16px;
+}
+
+/* Control row spacing */
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.control-row:last-child {
+  border-bottom: none;
+}
+
+/* Make sure the controls card has enough padding */
+.controls-card {
+  padding: 16px;
+}
+
+/* Data count */
+.data-count {
+  font-size: 14px;
+  color: var(--text-secondary);
+}

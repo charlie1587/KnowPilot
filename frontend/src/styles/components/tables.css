@@ -148,7 +148,7 @@
   padding: 0rem;
 }
 
-.action-button {
+.action-button-home {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -164,14 +164,14 @@
   position: relative;  /* For tooltip positioning */
 }
 
-.action-button:hover {
+.action-button-home:hover {
   background: #e8eaed;
   border-color: #c0c4cc;
   transform: translateY(-2px);
   box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
 }
 
-.action-button:hover::after {
+.action-button-home:hover::after {
   content: attr(title);
   position: absolute;
   bottom: -30px;
@@ -187,7 +187,7 @@
   pointer-events: none;
 }
 
-.action-button svg {
+.action-button-home svg {
   margin: 0;
 }
 
@@ -199,7 +199,7 @@
   color: #6c5ce7;
 }
 
-.action-button.generating {
+.action-button-home.generating {
   background: #e9ecef;
   color: #6c757d;
   cursor: not-allowed;
@@ -207,7 +207,7 @@
   box-shadow: none;
 }
 
-.action-button.generating:hover {
+.action-button-home.generating:hover {
   transform: none;
   box-shadow: none;
 }

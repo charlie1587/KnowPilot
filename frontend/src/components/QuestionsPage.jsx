@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { FiChevronDown, FiEye } from 'react-icons/fi';
+import { FiChevronDown, FiEye, FiSearch, FiRefreshCw, FiMaximize } from 'react-icons/fi';
 import LoadingState from './UI/LoadingState';
 import ErrorState from './UI/ErrorState';
 import EmptyState from './UI/EmptyState';
 import Notification from './UI/Notification';
 import useNotification from '../hooks/useNotification';
 
-// TODO: move some components to separate files
-// TODO: add buttons:expand all and delete all
-
 const QuestionsPage = () => {
   // State management
-  const [selectedK, setSelectedK] = useState(3); // Default value is 3
+  const [selectedK, setSelectedK] = useState(3); // Default zvalue is 3
+  const [newK, setNewK] = useState(''); // For creating new table with custom k
+  const [searchQuery, setSearchQuery] = useState(''); // For searching questions
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [questionsData, setQuestionsData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [expandedRows, setExpandedRows] = useState({});
   
   // Use notification hook
@@ -35,6 +35,7 @@ const QuestionsPage = () => {
       
       const data = await response.json();
       setQuestionsData(data);
+      setFilteredData(data); // Initialize filtered data with all data
     } catch (err) {
       setError(err.message);
       addNotification('error', `Failed to fetch data: ${err.message}`);
@@ -48,6 +49,34 @@ const QuestionsPage = () => {
     fetchContentGroupData(selectedK);
   }, [selectedK]);
 
+  // Filter data based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredData(questionsData);
+      return;
+    }
+    
+    const lowerCaseQuery = searchQuery.toLowerCase();
+    const filtered = questionsData.filter(item => {
+      // Search in question text
+      if (item.question && item.question.toLowerCase().includes(lowerCaseQuery)) {
+        return true;
+      }
+      
+      // Search in content fields
+      for (const key of Object.keys(item)) {
+        if (key.startsWith('content') && item[key] && 
+            item[key].toLowerCase().includes(lowerCaseQuery)) {
+          return true;
+        }
+      }
+      
+      return false;
+    });
+    
+    setFilteredData(filtered);
+  }, [searchQuery, questionsData]);
+
   // Expand/collapse row
   const toggleRowExpand = (rowId) => {
     setExpandedRows(prev => ({
@@ -56,58 +85,65 @@ const QuestionsPage = () => {
     }));
   };
 
+  // Expand all rows or collapse all rows
+  const toggleAllRows = () => {
+    if (Object.keys(expandedRows).length === filteredData.length) {
+      // If all rows are expanded, collapse all
+      setExpandedRows({});
+    } else {
+      // Otherwise, expand all rows
+      const newExpandedRows = {};
+      filteredData.forEach(item => {
+        newExpandedRows[item.id] = true;
+      });
+      setExpandedRows(newExpandedRows);
+    }
+  };
+
   // Select k value
   const handleKChange = (e) => {
     setSelectedK(parseInt(e.target.value));
   };
 
-  // Generate a new single-choice question
-  const handleGenerateQuestion = async () => {
-    try {
-      // Use notification instead of central loading card
-      addNotification('info', 'Generating a random question...');
-      
-      const response = await fetch(`http://localhost:8000/content-group/generate-single-choice-question/${selectedK}`, {
-        method: 'POST'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to generate question: ${response.status} ${response.statusText}`);
-      }
-      
-      const result = await response.json();
-      addNotification('success', `Successfully generated question for row #${result.row_id}`);
-      
-      // Refresh data to display newly generated question
-      fetchContentGroupData(selectedK);
-    } catch (err) {
-      setError(err.message);
-      addNotification('error', `Failed to generate question: ${err.message}`);
+  // Create table with custom k value
+  const handleCreateTable = (e) => {
+    e.preventDefault();
+    if (newK && !isNaN(parseInt(newK)) && parseInt(newK) > 0) {
+      setSelectedK(parseInt(newK));
+      setNewK('');
+    } else {
+      addNotification('error', 'Please enter a valid positive number for k');
     }
   };
 
-  // Generate questions for all rows
-  const handleGenerateAllQuestions = async () => {
+  // Handle search query submission
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    // The filtering is handled by useEffect
+  };
+
+  // Regenerate questions for all rows
+  const handleRegenerateAllQuestions = async () => {
     try {
       // Use notification instead of central loading card
-      addNotification('info', 'Generating questions for all rows...');
+      addNotification('info', 'Regenerating all questions...');
       
       const response = await fetch(`http://localhost:8000/content-group/generate-questions-for-all/${selectedK}`, {
         method: 'POST'
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to generate all questions: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to regenerate all questions: ${response.status} ${response.statusText}`);
       }
       
       const result = await response.json();
-      addNotification('success', `Successfully generated questions for ${result.success_count} rows`);
+      addNotification('success', `Successfully regenerated questions for ${result.success_count} rows`);
       
       // Refresh data to display newly generated questions
       fetchContentGroupData(selectedK);
     } catch (err) {
       setError(err.message);
-      addNotification('error', `Failed to generate all questions: ${err.message}`);
+      addNotification('error', `Failed to regenerate all questions: ${err.message}`);
     }
   };
 
@@ -141,49 +177,94 @@ const QuestionsPage = () => {
       <div className="content-header">
         <h2>Content Group Questions</h2>
         <div className="content-summary">
-          <span>{questionsData.length} items in group {selectedK}</span>
+          <span>{filteredData.length} items in group {selectedK}</span>
         </div>
       </div>
       
       <div className="controls-container">
         <div className="controls-card">
+          {/* First row: Create table with custom k and Content Group Size selector */}
           <div className="control-row">
-            <div className="filter-container">
-              <div className="filter-group">
-                <label htmlFor="k-select">Content Group Size:</label>
-                <div className="select-wrapper">
-                  <select 
-                    id="k-select"
-                    value={selectedK} 
-                    onChange={handleKChange}
-                    className="select-input"
-                  >
-                    {[2, 3, 4, 5, 6].map(k => (
-                      <option key={k} value={k}>{k}</option>
-                    ))}
-                  </select>
-                  <FiChevronDown className="select-arrow" />
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <form onSubmit={handleCreateTable} className="create-table-form" style={{ marginRight: '20px' }}>
+                  <div className="input-group">
+                    <label htmlFor="create-k">Create table with k:</label>
+                    <input
+                      type="number"
+                      id="create-k"
+                      value={newK}
+                      onChange={(e) => setNewK(e.target.value)}
+                      placeholder="k"
+                      min="1"
+                      className="number-input"
+                    />
+                  </div>
+                  <button type="submit" className="create-button">
+                    Create Table
+                  </button>
+                </form>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div className="filter-group" style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                  <label htmlFor="k-select" style={{ marginRight: '8px' }}>Content Group Size:</label>
+                  <div className="select-wrapper">
+                    <select 
+                      id="k-select"
+                      value={selectedK} 
+                      onChange={handleKChange}
+                      className="select-input"
+                    >
+                      {[2, 3, 4, 5, 6].map(k => (
+                        <option key={k} value={k}>{k}</option>
+                      ))}
+                    </select>
+                    <FiChevronDown className="select-arrow" />
+                  </div>
                 </div>
               </div>
-              
-              <div className="knowledge-buttons">
-                <button 
-                  onClick={handleGenerateQuestion} 
-                  className="knowledge-button generate"
-                >
-                  Generate Random Question
-                </button>
-                <button 
-                  onClick={handleGenerateAllQuestions} 
-                  className="knowledge-button generate"
-                >
-                  Generate All Questions
-                </button>
-              </div>
+            </div>
+          </div>
+          
+          {/* Second row: Search query and action buttons */}
+          <div className="control-row">
+            <div className="search-container">
+              <form onSubmit={handleSearchSubmit} className="search-form">
+                <div className="search-input-group">
+                  <FiSearch className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search questions and answers..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
+              </form>
             </div>
             
-            <div className="data-count">
-              <span>{questionsData.length} items</span>
+            <div className="action-buttons" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              {/* 删除了这两个按钮 */}
+              
+              <button 
+                onClick={handleRegenerateAllQuestions} 
+                className="knowledge-button generate"
+              >
+                <FiRefreshCw className="button-icon" style={{ marginRight: '5px' }} />
+                <span>Regenerate</span>
+              </button>
+              <button 
+                onClick={toggleAllRows} 
+                className="knowledge-button generate"
+              >
+                <FiMaximize className="button-icon" style={{ marginRight: '5px' }} />
+                <span>{Object.keys(expandedRows).length === filteredData.length ? "Collapse All" : "Expand All"}</span>
+              </button>
+              
+              <div className="data-count">
+                <span>{filteredData.length} items</span>
+              </div>
             </div>
           </div>
         </div>
@@ -200,7 +281,7 @@ const QuestionsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {questionsData.map(item => (
+              {filteredData.map(item => (
                 <React.Fragment key={item.id}>
                   <tr className={expandedRows[item.id] ? 'active-row' : ''}>
                     <td>
