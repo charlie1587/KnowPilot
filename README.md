@@ -1,6 +1,20 @@
 # KnowPilot
 An intelligent tool for generating questions from documents
 
+## Features Showcase
+
+### Main Interface
+![KnowPilot Main Interface](./assets/knowpilot-demo.gif)
+
+
+### Question Generation Process
+![Question Generation Process](./assets/question-generation-demo.gif)
+
+
+### Knowledge Points Interface
+![Knowledge Points Interface](./assets/knowledge-points-demo.gif)
+
+
 ## Project Introduction
 KnowPilot is a tool that automatically extracts content from educational documents and generates Q&A materials. It uses Large Language Models (LLMs) to generate knowledge point summaries, multiple-choice questions, and Q&A pairs, helping educators quickly create teaching resources.
 
@@ -19,25 +33,14 @@ pip install -r requirements.txt
 ```
 
 #### Install Ollama (Local LLM Service)
-Ollama is a lightweight tool for running LLMs locally, available for different operating systems:
+Ollama is a lightweight tool for running LLMs locally, available for different operating systems. You can find more information and installation instructions at [Ollama GitHub](https://github.com/ollama/ollama).
 
-**macOS**:
+You can start using the model directly with:
 ```bash
-brew install ollama
+ollama run llama3.2
 ```
 
-**Linux**:
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-```
-
-**Windows**:
-Download the installer from [Ollama's website](https://ollama.com/download)
-
-After installation, pull the required model:
-```bash
-ollama pull llama3.2
-```
+Note: Running this command will automatically pull the model if it's not already installed.
 
 ### 2. Frontend Environment Setup
 
@@ -47,8 +50,6 @@ cd frontend
 
 # Install dependencies
 npm install
-
-# If React icons are needed
 npm install react-icons
 ```
 
@@ -98,42 +99,65 @@ KnowPilot/
 │   │   └── content_group.py  # Content group and multiple-choice API
 │   ├── services/             # Service layer
 │   │   └── llm_services.py   # LLM calling service
+│   ├── exceptions/           # Custom exception handlers
+│   │   └── http_exceptions.py # HTTP error exceptions
 │   ├── config.py             # Configuration loader
 │   ├── crud.py               # Database operations
 │   ├── database.py           # Database connection
 │   ├── import_docx_to_db.py  # Document import tool
-│   └── models.py             # Data models
+│   ├── init_db.py            # Database initialization script
+│   ├── models.py             # Data models
+│   └── schemas.py            # Pydantic schemas
 │
 ├── frontend/                 # Frontend application
 │   ├── src/                  # Source code
 │   │   ├── components/       # React components
+│   │   │   ├── DataDisplay/  # Data visualization components
+│   │   │   ├── Knowledge/    # Knowledge point components
+│   │   │   ├── Navigation/   # Navigation components
+│   │   │   └── UI/           # UI utility components
 │   │   ├── hooks/            # Custom hooks
-│   │   └── styles/           # CSS styles
+│   │   ├── styles/           # CSS styles
+│   │   │   └── components/   # Component-specific styles
+│   │   └── assets/           # Static assets
+│   ├── public/               # Public assets
 │   └── vite.config.js        # Vite configuration
 │
 ├── config/                   # Configuration files
 │   └── config.yaml           # Main configuration file
 │
 ├── data/                     # Data files
-│   └── quizgen.db            # SQLite database
+│   ├── quizgen.db            # SQLite database
+│   └── Thunderstorm Avoidance_Boeing 20250210.docx  # Sample document
 │
+├── package.json              # Project dependencies
+├── requirements.txt          # Python dependencies
 └── README.md                 # Project documentation
 ```
 
 ## Main Features
-- Import educational content from Word documents
-- Automatically generate knowledge point summaries using LLMs
-- Generate Q&A pairs based on content
-- Create multiple-choice and single-choice questions
-- Manage all content through a user-friendly UI
 
-## Common Issues
+### Document Processing
+- **Word Document Import**: Automatically extracts content from DOCX files
+- **Content Segmentation**: Divides documents into logical sections for processing
+- **Content Management**: Organize and manage extracted document content
 
-### LLM Service Connection Problems
-Ensure the Ollama service is running and the llama3.2 model has been downloaded. Check if port 11434 is available.
+### AI-Powered Content Generation
+- **Knowledge Point Extraction**: Automatically identifies and summarizes key concepts
+- **Q&A Generation**: Creates question and answer pairs based on document content
+- **Questions**: Generates quiz-style questions with options
 
-### Database Initialization Issues
-If database initialization fails, try deleting the data/quizgen.db file and running the import command again.
+### User Interface
+- **Content Explorer**: Browse and search through document content
+- **Knowledge Dashboard**: View and manage generated knowledge points
+- **Question Bank**: Access and export generated questions for educational use
 
-### API Connection Errors
-Check if the backend service is running on the correct port (8000) and that there are no firewall restrictions.
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- The llama3.2 model by Meta AI
+- React and Vite communities
+- FastAPI framework

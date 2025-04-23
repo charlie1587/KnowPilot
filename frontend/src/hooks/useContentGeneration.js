@@ -40,9 +40,9 @@ export default function useContentGeneration(fetchData, addNotification) {
     try {
       setGenerating(prev => ({ ...prev, [`kp-${itemId}`]: true }));
       
-      console.log(`Calling API: generate-knowledge-single/${itemId}`);
+      console.log(`Calling API: knowledge/generate-knowledge-single/${itemId}`);
       
-      const response = await fetch(`http://localhost:8000/generate-knowledge-single/${itemId}`);
+      const response = await fetch(`http://localhost:8000/knowledge/generate-knowledge-single/${itemId}`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -55,10 +55,8 @@ export default function useContentGeneration(fetchData, addNotification) {
       
       addNotification('success', `Generated knowledge point for item #${itemId}`);
       
-      // 只有在 API 调用成功时才调用 fetchData
       await fetchData().catch(fetchError => {
         console.error('Error fetching data after generation:', fetchError);
-        // 不显示额外的错误通知
       });
     } catch (error) {
       console.error('Error generating knowledge point:', error);
@@ -73,7 +71,7 @@ export default function useContentGeneration(fetchData, addNotification) {
       setProcessingAll(true);
       addNotification('info', 'Generating all knowledge points. This may take a while...');
       
-      const response = await fetch('http://localhost:8000/generate-knowledge-all');
+      const response = await fetch('http://localhost:8000/knowledge/generate-all');
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -106,7 +104,7 @@ export default function useContentGeneration(fetchData, addNotification) {
     try {
       setProcessingAll(true);
       
-      const response = await fetch('http://localhost:8000/clear-all-knowledge-points');
+      const response = await fetch('http://localhost:8000/knowledge/clear-all');
       
       if (!response.ok) {
         const errorText = await response.text();
