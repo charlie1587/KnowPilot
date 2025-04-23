@@ -357,3 +357,91 @@ def get_content_group_data(k: int, db: Session = Depends(get_db)):
         raise http_ex
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching data: {str(e)}") from e
+
+@router.get("/available-groups", response_model=list)
+def get_available_content_groups(db: Session = Depends(get_db)): # pylint: disable=unused-argument
+    """
+    Get a list of available content group values (k) from the database.
+    
+    Returns:
+        List of integers representing the available content group sizes
+    """
+    try:
+        # Get all tables from the database
+        inspector = inspect(engine)
+        all_tables = inspector.get_table_names()
+
+        # Filter for content_group tables and extract the k values
+        content_group_tables = [table for table in all_tables if table.startswith('content_group_')]
+        k_values = []
+
+        for table in content_group_tables:
+            try:
+                # Extract the k value from the table name
+                k = int(table.split('_')[-1])
+                k_values.append(k)
+            except ValueError:
+                # Skip if we can't parse the k value
+                continue
+
+        # Sort the k values
+        k_values.sort()
+
+        return k_values
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}") from e
+
+@router.post("/create-and-generate/{k}", response_model=dict)
+def create_table_and_generate_questions(k: int, db: Session = Depends(get_db)):
+    """
+    Create a content group table with the specified k value if it doesn't exist,
+    then generate questions for all rows.
+    
+    This endpoint combines table creation and question generation in one operation.
+    
+    Args:
+        k: Number of content columns to include
+        
+    Returns:
+        Dict with operation results
+    """
+    try:
+        # Check if the table exists
+        table_name = f"content_group_{k}"
+        inspector = inspect(engine)
+        table_exists = inspector.has_table(table_name)
+
+        # If table doesn't exist, create it and fill with data
+        if not table_exists:
+            # Call the existing create_and_fill_table function
+            create_result = create_and_fill_table(k, db)
+            table_created = True
+        else:
+            create_result = {
+                "status": "not_modified",
+                "message": f"Table '{table_name}' already exists."
+            }
+            table_created = False
+
+        # Now generate questions for all rows
+        generate_result = generate_questions_for_all_rows(k, db)
+
+        # Combine the results
+        return {
+            "table_operation": {
+                "status": "created" if table_created else "existed",
+                "message": create_result.get("message", ""),
+                "table_name": table_name
+            },
+            "question_generation": generate_result
+        }
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error creating table and generating questions: {str(e)}"
+        ) from e

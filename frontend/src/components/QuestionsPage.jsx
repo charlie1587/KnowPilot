@@ -8,7 +8,7 @@ import useNotification from '../hooks/useNotification';
 
 const QuestionsPage = () => {
   // State management
-  const [selectedK, setSelectedK] = useState(3); // Default zvalue is 3
+  const [selectedK, setSelectedK] = useState(3); // Default value is 3
   const [newK, setNewK] = useState(''); // For creating new table with custom k
   const [searchQuery, setSearchQuery] = useState(''); // For searching questions
   const [loading, setLoading] = useState(false);
@@ -16,9 +16,46 @@ const QuestionsPage = () => {
   const [questionsData, setQuestionsData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [expandedRows, setExpandedRows] = useState({});
+  const [availableKValues, setAvailableKValues] = useState([]);
   
   // Use notification hook
   const { notifications, addNotification } = useNotification();
+
+  // Fetch available k values from API
+  const fetchAvailableKValues = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/content-group/available-groups');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch available groups: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        setAvailableKValues(data);
+        
+        // If there are available values but the currently selected one is not in the list,
+        // update to use the first available value
+        if (!data.includes(selectedK) && data.length > 0) {
+          setSelectedK(data[0]);
+        }
+      } else {
+        // If no values are available, we keep the default selectedK
+        setAvailableKValues([]);
+      }
+    } catch (err) {
+      console.error('Error fetching available k values:', err);
+      addNotification('error', `Failed to fetch available groups: ${err.message}`);
+      // Keep using default values if API fails
+      setAvailableKValues([]);
+    }
+  };
+
+  // Fetch available k values on component mount
+  useEffect(() => {
+    fetchAvailableKValues();
+  }, []);
 
   // Fetch content group data for the specified k value
   const fetchContentGroupData = async (k) => {
@@ -106,11 +143,46 @@ const QuestionsPage = () => {
   };
 
   // Create table with custom k value
-  const handleCreateTable = (e) => {
+  const handleCreateTable = async (e) => {
     e.preventDefault();
+    
     if (newK && !isNaN(parseInt(newK)) && parseInt(newK) > 0) {
-      setSelectedK(parseInt(newK));
-      setNewK('');
+      const k = parseInt(newK);
+      
+      // Show notification
+      addNotification('info', `Creating table with k=${k} and generating questions...`);
+      
+      try {
+        // Call the new endpoint that creates table and generates questions
+        const response = await fetch(`http://localhost:8000/content-group/create-and-generate/${k}`, {
+          method: 'POST'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to create table: ${response.status} ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        // Show success notification
+        if (result.table_operation.status === 'created') {
+          addNotification('success', `Created new table with k=${k} and generated ${result.question_generation.success_count} questions`);
+        } else {
+          addNotification('success', `Table with k=${k} already exists. Generated ${result.question_generation.success_count} questions`);
+        }
+        
+        // Refresh the list of available k values
+        await fetchAvailableKValues();
+        
+        // Set the selected k to the newly created one
+        setSelectedK(k);
+        
+        // Clear the input
+        setNewK('');
+      } catch (err) {
+        console.error('Error creating table:', err);
+        addNotification('error', `Failed to create table: ${err.message}`);
+      }
     } else {
       addNotification('error', 'Please enter a valid positive number for k');
     }
@@ -177,7 +249,6 @@ const QuestionsPage = () => {
       <div className="content-header">
         <h2>Content Group Questions</h2>
         <div className="content-summary">
-          <span>{filteredData.length} items in group {selectedK}</span>
         </div>
       </div>
       
@@ -216,7 +287,7 @@ const QuestionsPage = () => {
                       onChange={handleKChange}
                       className="select-input"
                     >
-                      {[2, 3, 4, 5, 6].map(k => (
+                      {availableKValues.map(k => (
                         <option key={k} value={k}>{k}</option>
                       ))}
                     </select>
@@ -245,8 +316,6 @@ const QuestionsPage = () => {
             </div>
             
             <div className="action-buttons" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              {/* 删除了这两个按钮 */}
-              
               <button 
                 onClick={handleRegenerateAllQuestions} 
                 className="knowledge-button generate"
@@ -263,7 +332,7 @@ const QuestionsPage = () => {
               </button>
               
               <div className="data-count">
-                <span>{filteredData.length} items</span>
+                <span>{filteredData.length} items in group {selectedK}</span>
               </div>
             </div>
           </div>
@@ -306,7 +375,6 @@ const QuestionsPage = () => {
                       <td colSpan={3}>
                         <div className="expanded-detail">
                           <div className="detail-card answer-card">
-                            <h3>Correct Answer</h3>
                             <div className="answer-content">
                               {item.correct_answer ? (
                                 <>
