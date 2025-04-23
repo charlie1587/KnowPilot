@@ -33,33 +33,14 @@ SQL_ECHO = DB_CONFIG.get("echo", False)
 # LLM API Configuration
 # ----------------------
 
+# Load prompt templates from config
+PROMPTS_CONFIG = CONFIG.get("prompts", {})
+
 # Template for generating questions and answers
-QA_PROMPT_TEMPLATE = """Based on the following content, generate a question and its corresponding answer:
-
-Content: {content}
-
-Format your response exactly as:
-Question: [your generated question]
-Answer: [your generated answer]"""
+QA_PROMPT_TEMPLATE = PROMPTS_CONFIG.get("qa_template", "")
 
 # Template for extracting knowledge points
-KNOWLEDGE_PROMPT_TEMPLATE = """Identify the key knowledge point from the following content.
-    
-Content: {content}
-
-Important instructions:
-1. Provide ONLY the knowledge point itself without any prefixes like "The key knowledge is" or similar phrases
-2. Keep it concise (1-2 sentences maximum)
-3. Focus on the core concept
-4. Start directly with the knowledge point
-5. Use simple, clear language
-
-Knowledge point:"""
+KNOWLEDGE_PROMPT_TEMPLATE = PROMPTS_CONFIG.get("knowledge_template", "")
 
 # Template for generating single-choice questions
-CONTENT_GROUP_QUESTION_TEMPLATE = """Create a single-choice question based on this content: "{content}"
-
-The question should test the understanding of this specific content.
-
-Format your response exactly as follows:
-Question: [your question here]"""
+CONTENT_GROUP_QUESTION_TEMPLATE = PROMPTS_CONFIG.get("content_group_question_template", "")
