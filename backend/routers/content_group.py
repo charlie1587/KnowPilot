@@ -2,11 +2,12 @@
 Router for content grouping operations - simple version.
 """
 from datetime import datetime
+import random
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import Column, Text, Integer, DateTime, inspect, text
 
-
+from backend.services.llm_services import call_llm
 from backend.database import get_db, engine, Base
 from backend.models import Question
 
@@ -66,7 +67,7 @@ def create_content_group_table(k: int, db: Session = Depends(get_db)):
 
         # Create a new model type dynamically
         DynamicModel = type(f'ContentGroup{k}', (Base,), attrs)
-        
+
         # Register the model with SQLAlchemy metadata
         Base.metadata.create_all(engine, [DynamicModel.__table__], checkfirst=True)  # pylint: disable=no-member
 
@@ -177,3 +178,135 @@ def create_and_fill_table(k: int, db: Session = Depends(get_db)):
         # Rollback in case of error
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error filling table with data: {str(e)}")
+
+    
+@router.post("/generate-questions-for-all/{k}", response_model=dict)
+def generate_questions_for_all_rows(k: int, db: Session = Depends(get_db)):
+    """
+    generate questions for all rows in the content group table.
+    """
+    try:
+        # Check if the table exists
+        table_name = f"content_group_{k}"
+        inspector = inspect(engine)
+        if not inspector.has_table(table_name):
+            raise HTTPException(status_code=404, detail=f"Table {table_name} does not exist")
+        
+        # Get the table's columns
+        result_proxy = db.execute(text(f"PRAGMA table_info({table_name})"))
+        columns = [row[1] for row in result_proxy.fetchall()]
+        content_column_names = [col for col in columns if col.startswith('content')]
+        
+        if not content_column_names:
+            raise HTTPException(status_code=404, detail=f"No content columns found in table {table_name}")
+        
+        # Get all rows from the table
+        query = text(f"SELECT * FROM {table_name}")
+        results = db.execute(query).fetchall()
+        
+        if not results:
+            raise HTTPException(status_code=404, detail=f"No data found in table {table_name}")
+        
+        # Get the primary key index
+        pk_columns = inspector.get_pk_constraint(table_name)['constrained_columns']
+        pk_index = columns.index(pk_columns[0]) if pk_columns else 0
+        
+        # Count success and failure
+        success_count = 0
+        failure_count = 0
+        processed_rows = []
+        
+        # Generate questions for each row
+        for row in results:
+            try:
+                row_id = row[pk_index]
+                
+                # Find content columns with data
+                content_columns = {}
+                for col in content_column_names:
+                    col_index = columns.index(col)
+                    if col_index < len(row) and row[col_index] is not None:
+                        content_columns[col] = row[col_index]
+                
+                # make sure we have at least two content columns with data
+                if len(content_columns) < 2:
+                    processed_rows.append({
+                        "row_id": row_id,
+                        "status": "skipped",
+                        "reason": "Insufficient content columns with data"
+                    })
+                    continue
+                
+                # randomly select one content column to be the correct answer
+                correct_column, correct_content = random.choice(list(content_columns.items()))
+                correct_number = correct_column.replace('content', '')
+                
+                # generate a question based on the content
+                prompt = f"""
+                Create a single-choice question based on this content: "{correct_content}"
+                
+                The question should test the understanding of this specific content.
+                
+                Format your response exactly as follows:
+                Question: [your question here]
+                """
+                
+                response = call_llm(prompt, max_tokens=200)
+                
+                # extract the question text from the response
+                if "Question:" in response:
+                    question_text = response.split("Question:")[1].strip()
+                    # if the response contains "A)" or "a)", split the question text
+                    if "A)" in question_text or "a)" in question_text:
+                        question_text = question_text.split("A)")[0].split("a)")[0].strip()
+                else:
+                    question_text = response.strip()
+                    if "A)" in question_text or "a)" in question_text:
+                        question_text = question_text.split("A)")[0].split("a)")[0].strip()
+                
+                # update the row with the generated question and correct answer
+                update_query = text(f"""
+                    UPDATE {table_name}
+                    SET question = :question, correct_answer = :answer, updated_at = :updated_at
+                    WHERE id = :id
+                """)
+                
+                db.execute(update_query, {
+                    "question": question_text,
+                    "answer": correct_number,
+                    "updated_at": datetime.now(),
+                    "id": row_id
+                })
+                
+                success_count += 1
+                processed_rows.append({
+                    "row_id": row_id,
+                    "status": "success",
+                    "question": question_text,
+                    "correct_answer": correct_number
+                })
+                
+            except Exception as row_error:
+                failure_count += 1
+                processed_rows.append({
+                    "row_id": row_id if 'row_id' in locals() else "unknown",
+                    "status": "failed",
+                    "error": str(row_error)
+                })
+
+        db.commit()
+
+        return {
+            "status": "completed",
+            "table": table_name,
+            "total_rows": len(results),
+            "success_count": success_count,
+            "failure_count": failure_count,
+            "processed_rows": processed_rows
+        }
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error generating questions: {str(e)}")

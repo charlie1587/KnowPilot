@@ -147,3 +147,4 @@ def generate_qa_all(db: Session = Depends(get_db)):
         "updated_count": updated_count,
         "failures": failures if failures else None
     }
+
