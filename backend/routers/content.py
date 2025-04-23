@@ -20,4 +20,4 @@ def get_all_contents(db: Session = Depends(get_db)):
     Fetch all contents from the database.
     """
     questions = get_all_questions(db)
-    return questions  
+    return questions

@@ -5,6 +5,8 @@ Handles Q&A generation routes.
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import update
+from sqlalchemy.exc import SQLAlchemyError
+import requests
 
 from backend.database import get_db
 from backend.models import Question
@@ -14,7 +16,9 @@ from backend.services.llm_services import call_llm
 from backend.config import QA_PROMPT_TEMPLATE
 from backend.exceptions import (
     resource_not_found,
-    handle_processing_error,
+    handle_sqlalchemy_error,
+    handle_value_error,
+    handle_type_error,
     format_bulk_operation_result
 )
 
@@ -50,8 +54,8 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
             question_part = next((p.replace("Question:", "").strip() 
                                 for p in parts if p.startswith("Question:")), "")
             answer_part = next((p.replace("Answer:", "").strip() 
-                              for p in parts if p.startswith("Answer:")), "")
-        
+                                for p in parts if p.startswith("Answer:")), "")
+
         # Update the database record
         if question_part and answer_part:
             stmt = (
@@ -61,10 +65,10 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
             )
             db.execute(stmt)
             db.commit()
-            
+
             # Refresh the question object to get updated values
             question = db.query(Question).filter(Question.id == question_id).first()
-            
+
             return {
                 "status": "success",
                 "question_id": question_id,
@@ -72,9 +76,19 @@ def generate_qa_single(question_id: int, db: Session = Depends(get_db)):
             }
         else:
             raise HTTPException(status_code=500, detail="Failed to generate question and answer")
-            
-    except Exception as e:
-        raise handle_processing_error(e, "processing QA generation response") from e
+
+    except ValueError as e:
+        raise handle_value_error(e) from e
+    except TypeError as e:
+        raise handle_type_error(e) from e
+    except SQLAlchemyError as e:
+        raise handle_sqlalchemy_error(e, db, "updating question") from e
+    except (KeyError, IndexError) as e:
+        # handle unexpected response format
+        raise HTTPException(
+            status_code=422,
+            detail=f"Error parsing LLM response: {str(e)}"
+        ) from e
 
 
 @router.get("/generate-qa-all")
@@ -103,18 +117,18 @@ def generate_qa_all(db: Session = Depends(get_db)):
             prompt = QA_PROMPT_TEMPLATE.format(content=question.content)
 
             response = call_llm(prompt, max_tokens=200)
-            
+
             try:
                 if "Question:" in response and "Answer:" in response:
                     question_part = response.split("Question:")[1].split("Answer:")[0].strip()
                     answer_part = response.split("Answer:")[1].strip()
                 else:
                     parts = response.split("\n")
-                    question_part = next((p.replace("Question:", "").strip() 
+                    question_part = next((p.replace("Question:", "").strip()
                                         for p in parts if p.startswith("Question:")), "")
-                    answer_part = next((p.replace("Answer:", "").strip() 
-                                      for p in parts if p.startswith("Answer:")), "")
-                
+                    answer_part = next((p.replace("Answer:", "").strip()
+                                        for p in parts if p.startswith("Answer:")), "")
+
                 if question_part and answer_part:
                     stmt = (
                         update(Question)
@@ -129,25 +143,35 @@ def generate_qa_all(db: Session = Depends(get_db)):
                         "error": "Failed to parse LLM response", 
                         "response": response
                     })
-                    
-            except Exception as e:
+
+            except (ValueError, TypeError) as e:
                 failures.append({
                     "id": question.id, 
-                    "error": f"Parsing error: {str(e)}", 
+                    "error": f"Value or type error: {str(e)}", 
                     "response": response
                 })
-                
-        except Exception as e:
+            except (KeyError, IndexError) as e:
+                failures.append({
+                    "id": question.id, 
+                    "error": f"Key or index error: {str(e)}", 
+                    "response": response
+                })
+
+        except SQLAlchemyError as e:
             failures.append({
                 "id": question.id, 
-                "error": str(e)
+                "error": f"Database error: {str(e)}"
             })
-    
+        except requests.RequestException as e:
+            failures.append({
+                "id": question.id, 
+                "error": f"LLM service request error: {str(e)}"
+            })
+
     db.commit()
-    
+
     return format_bulk_operation_result(
         total_items=len(all_questions),
         updated_count=updated_count,
         failures=failures
     )
-

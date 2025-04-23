@@ -4,7 +4,9 @@ Handles knowledge point generation routes.
 """
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import update
+import requests
 
 from backend.database import get_db
 from backend.models import Question
@@ -14,7 +16,7 @@ from backend.config import KNOWLEDGE_PROMPT_TEMPLATE
 from backend.schemas import QuestionResponse
 from backend.exceptions import (
     resource_not_found,
-    handle_db_operation_error,
+    handle_sqlalchemy_error,
     format_bulk_operation_result
 )
 
@@ -52,9 +54,9 @@ def clear_all_knowledge_points(db: Session = Depends(get_db)):
             "message": f"Successfully cleared {affected_rows} knowledge points",
             "updated_count": affected_rows
         }
-    except Exception as e:
-        # Use the db operation error handler
-        raise handle_db_operation_error(e, db, "clearing knowledge points") from e
+    except SQLAlchemyError as e:
+        # Use specific handler for database errors
+        raise handle_sqlalchemy_error(e, db, "clearing knowledge points") from e
 
 @router.get("/generate-knowledge-single/{question_id}", response_model=dict)
 def generate_knowledge_single(question_id: int, db: Session = Depends(get_db)):
@@ -157,15 +159,30 @@ def generate_knowledge_all(db: Session = Depends(get_db)):
                     "error": "Failed to generate knowledge point", 
                     "response": response
                 })
-                
-        except Exception as e:
+
+        except SQLAlchemyError as e:
             failures.append({
                 "id": question.id, 
-                "error": str(e)
+                "error": f"Database error: {str(e)}"
             })
-    
+        except requests.RequestException as e:
+            failures.append({
+                "id": question.id, 
+                "error": f"LLM service request error: {str(e)}"
+            })
+        except ValueError as e:
+            failures.append({
+                "id": question.id, 
+                "error": f"Value error: {str(e)}"
+            })
+        except TypeError as e:
+            failures.append({
+                "id": question.id, 
+                "error": f"Type error: {str(e)}"
+            })
+
     db.commit()
-    
+
     return format_bulk_operation_result(
         total_items=len(all_questions),
         updated_count=updated_count,

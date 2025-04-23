@@ -3,9 +3,111 @@
 Contains custom exception handling functions for FastAPI endpoints.
 """
 from typing import Any, Dict, List, Optional, Union
+from json.decoder import JSONDecodeError
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError, OperationalError
+import requests
 
+
+# Common specific exception types
+# Database Exceptions
+def handle_sqlalchemy_error(error: SQLAlchemyError, db: Session, operation: str) -> HTTPException:
+    """
+    Specifically handles SQLAlchemy exceptions
+    """
+    db.rollback()
+    return HTTPException(
+        status_code=500,
+        detail=f"Database error during {operation}: {str(error)}"
+    )
+
+def handle_integrity_error(error: IntegrityError, db: Session) -> HTTPException:
+    """
+    Handles data integrity errors, such as primary key conflicts
+    """
+    db.rollback()
+    return HTTPException(
+        status_code=409,
+        detail=f"Data integrity error: {str(error)}"
+    )
+
+def handle_operational_error(error: OperationalError, db: Session) -> HTTPException:
+    """
+    Handles database operational errors, such as connection issues
+    """
+    db.rollback()
+    return HTTPException(
+        status_code=503,
+        detail=f"Database operational error: {str(error)}"
+    )
+
+# HTTP/Network Exceptions
+def handle_request_error(error: requests.RequestException) -> HTTPException:
+    """
+    Handles HTTP request errors
+    """
+    return HTTPException(
+        status_code=503,
+        detail=f"External service request error: {str(error)}"
+    )
+
+def handle_timeout_error(error: requests.Timeout) -> HTTPException:
+    """
+    Handles request timeout errors
+    """
+    return HTTPException(
+        status_code=504,
+        detail=f"External service timeout: {str(error)}"
+    )
+
+# Data Processing Exceptions
+def handle_json_error(error: JSONDecodeError) -> HTTPException:
+    """
+    Handles JSON parsing errors
+    """
+    return HTTPException(
+        status_code=422,
+        detail=f"JSON decode error: {str(error)}"
+    )
+
+def handle_value_error(error: ValueError) -> HTTPException:
+    """
+    Handles value errors
+    """
+    return HTTPException(
+        status_code=422,
+        detail=f"Invalid value: {str(error)}"
+    )
+
+def handle_type_error(error: TypeError) -> HTTPException:
+    """
+    Handles type errors
+    """
+    return HTTPException(
+        status_code=422,
+        detail=f"Type error: {str(error)}"
+    )
+
+def handle_key_error(error: KeyError) -> HTTPException:
+    """
+    Handles dictionary key errors
+    """
+    return HTTPException(
+        status_code=422,
+        detail=f"Missing key: {str(error)}"
+    )
+
+def handle_index_error(error: IndexError) -> HTTPException:
+    """
+    Handles index errors
+    """
+    return HTTPException(
+        status_code=422,
+        detail=f"Index error: {str(error)}"
+    )
+
+# Original exception handling functions
 def resource_not_found(
     resource_type: str,
     resource_id: Union[int, str],

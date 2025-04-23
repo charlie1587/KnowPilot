@@ -12,7 +12,7 @@ from backend.services.llm_services import call_llm
 from backend.database import get_db, engine, Base
 from backend.models import Question
 from backend.exceptions import (
-    bad_request, 
+    bad_request,
     handle_processing_error,
     handle_db_operation_error
 )
@@ -115,7 +115,7 @@ def create_and_fill_table(k: int, db: Session = Depends(get_db)):
         }
 
     # First, create the table by calling the existing endpoint
-    table_response = create_content_group_table(k, db)
+    create_content_group_table(k, db)
 
     # If the table was created, proceed to fill it with data
     try:
