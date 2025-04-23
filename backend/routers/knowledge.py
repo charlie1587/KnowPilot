@@ -22,10 +22,11 @@ from backend.exceptions import (
 
 
 router = APIRouter(
+    prefix="/knowledge",
     tags=["knowledge generation"],
 )
 
-@router.get("/clear-all-knowledge-points")
+@router.post("/clear-all")
 def clear_all_knowledge_points(db: Session = Depends(get_db)):
     """
     Clear all knowledge points by resetting them to 'To be added'.
@@ -112,8 +113,7 @@ def generate_knowledge_single(question_id: int, db: Session = Depends(get_db)):
         "knowledge_point": knowledge_point
     }
 
-
-@router.get("/generate-knowledge-all")
+@router.post("/generate-all")
 def generate_knowledge_all(db: Session = Depends(get_db)):
     """
     Generate knowledge points for all questions and update the database.
@@ -188,3 +188,27 @@ def generate_knowledge_all(db: Session = Depends(get_db)):
         updated_count=updated_count,
         failures=failures
     )
+
+@router.get("/get-all")
+def get_all_knowledge(db: Session = Depends(get_db)):
+    """
+    Get all questions with their knowledge points.
+    
+    Returns:
+        list: A list of questions with section, content and knowledge point fields.
+    """
+    try:
+        questions = db.query(Question).all()
+
+        result = []
+        for question in questions:
+            result.append({
+                "id": question.id,
+                "section": question.section,
+                "content": question.content,
+                "knowledge_point": question.knowledge_point
+            })
+
+        return result
+    except SQLAlchemyError as e:
+        raise handle_sqlalchemy_error(e, db, "fetching knowledge data") from e

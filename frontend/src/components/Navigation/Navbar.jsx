@@ -25,6 +25,15 @@ const Navbar = ({ isOpen, toggleMenu }) => {
               Questions
             </NavLink>
           </li>
+          <li className="nav-item">
+            <NavLink 
+              to="/knowledge" 
+              className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+              onClick={toggleMenu}
+            >
+              Knowledge
+            </NavLink>
+          </li>
         </ul>
       </div>
     </nav>
