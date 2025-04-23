@@ -7,27 +7,26 @@ import Notification from './UI/Notification';
 import useNotification from '../hooks/useNotification';
 
 // TODO: move some components to separate files
-// TODO: remove chinese comments
 // TODO: add buttons:expand all and delete all
 
 const QuestionsPage = () => {
-  // 状态管理
-  const [selectedK, setSelectedK] = useState(3); // 默认值为3
+  // State management
+  const [selectedK, setSelectedK] = useState(3); // Default value is 3
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [questionsData, setQuestionsData] = useState([]);
   const [expandedRows, setExpandedRows] = useState({});
   
-  // 使用通知钩子
+  // Use notification hook
   const { notifications, addNotification } = useNotification();
 
-  // 获取指定k值的content group数据
+  // Fetch content group data for the specified k value
   const fetchContentGroupData = async (k) => {
     setLoading(true);
     setError(null);
     
     try {
-      // 获取表中的所有行
+      // Get all rows from the table
       const response = await fetch(`http://localhost:8000/content-group/get-data/${k}`);
       
       if (!response.ok) {
@@ -44,12 +43,12 @@ const QuestionsPage = () => {
     }
   };
 
-  // 当k值变化时获取数据
+  // Fetch data when k value changes
   useEffect(() => {
     fetchContentGroupData(selectedK);
   }, [selectedK]);
 
-  // 展开/收起行
+  // Expand/collapse row
   const toggleRowExpand = (rowId) => {
     setExpandedRows(prev => ({
       ...prev,
@@ -57,15 +56,15 @@ const QuestionsPage = () => {
     }));
   };
 
-  // 选择k值
+  // Select k value
   const handleKChange = (e) => {
     setSelectedK(parseInt(e.target.value));
   };
 
-  // 生成新的单选题
+  // Generate a new single-choice question
   const handleGenerateQuestion = async () => {
     try {
-      // 使用通知代替中央加载卡片
+      // Use notification instead of central loading card
       addNotification('info', 'Generating a random question...');
       
       const response = await fetch(`http://localhost:8000/content-group/generate-single-choice-question/${selectedK}`, {
@@ -79,7 +78,7 @@ const QuestionsPage = () => {
       const result = await response.json();
       addNotification('success', `Successfully generated question for row #${result.row_id}`);
       
-      // 重新获取数据以显示新生成的问题
+      // Refresh data to display newly generated question
       fetchContentGroupData(selectedK);
     } catch (err) {
       setError(err.message);
@@ -87,10 +86,10 @@ const QuestionsPage = () => {
     }
   };
 
-  // 生成所有行的单选题
+  // Generate questions for all rows
   const handleGenerateAllQuestions = async () => {
     try {
-      // 使用通知代替中央加载卡片
+      // Use notification instead of central loading card
       addNotification('info', 'Generating questions for all rows...');
       
       const response = await fetch(`http://localhost:8000/content-group/generate-questions-for-all/${selectedK}`, {
@@ -104,7 +103,7 @@ const QuestionsPage = () => {
       const result = await response.json();
       addNotification('success', `Successfully generated questions for ${result.success_count} rows`);
       
-      // 重新获取数据以显示新生成的问题
+      // Refresh data to display newly generated questions
       fetchContentGroupData(selectedK);
     } catch (err) {
       setError(err.message);
@@ -112,7 +111,7 @@ const QuestionsPage = () => {
     }
   };
 
-  // 为一行生成选项列表
+  // Generate choices list for a row
   const generateChoicesList = (item) => {
     const contentColumns = Object.keys(item).filter(key => key.startsWith('content') && item[key]);
     
@@ -130,7 +129,7 @@ const QuestionsPage = () => {
     );
   };
 
-  // 条件渲染
+  // Conditional rendering
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} />;
   if (questionsData.length === 0) return <EmptyState />;
@@ -226,6 +225,7 @@ const QuestionsPage = () => {
                       <td colSpan={3}>
                         <div className="expanded-detail">
                           <div className="detail-card answer-card">
+                            <h3>Correct Answer</h3>
                             <div className="answer-content">
                               {item.correct_answer ? (
                                 <>
